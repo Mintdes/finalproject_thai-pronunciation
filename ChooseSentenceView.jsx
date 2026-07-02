@@ -1,0 +1,248 @@
+import { useState } from 'react';
+import styled from 'styled-components';
+
+// --- STYLED COMPONENTS ---
+const ViewContainer = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 10px;
+  animation: fadeIn 0.3s ease-in-out;
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`;
+
+const TopBar = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+`;
+
+const BackButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #222;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  &:hover { transform: scale(1.1); }
+`;
+
+const ProgressText = styled.span`
+  font-size: 13px;
+  font-weight: bold;
+  color: #555;
+`;
+
+const PageTitle = styled.h2`
+  font-size: 18px;
+  font-weight: bold;
+  color: #222;
+  margin: 5px 0 15px 0;
+  text-align: center;
+`;
+
+const TopicGroup = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+`;
+
+const TopicHeaderCard = styled.div`
+  width: 100%;
+  background-color: #c6f6d5; /* สีเขียวพาสเทลตามภาพ */
+  border-radius: 20px;
+  padding: 15px 20px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+`;
+
+const TopicLeftSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+`;
+
+const IconContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+`;
+
+const TopicTitle = styled.h3`
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #222;
+`;
+
+const StatusText = styled.span`
+  font-size: 12px;
+  color: #555;
+  font-weight: 500;
+`;
+
+const ArrowCircle = styled.div`
+  width: 26px;
+  height: 26px;
+  background-color: #222;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  transform: ${props => props.isOpen ? 'rotate(-90deg)' : 'rotate(0deg)'};
+  transition: transform 0.2s ease;
+`;
+
+// กล่องสีเทาเก็บรายชื่อประโยคย่อยภายในหมวดหมู่
+const SubListWrapper = styled.div`
+  width: 100%;
+  background-color: #f3f4f6; /* พื้นหลังกล่องสีเทาซ้อนตามภาพ */
+  border-radius: 20px;
+  padding: 15px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+const SentenceItemRow = styled.div`
+  width: 100%;
+  background-color: white;
+  border-radius: 12px;
+  padding: 12px 15px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: #fafafa;
+  }
+`;
+
+const RadioCircle = styled.div`
+  width: 18px;
+  height: 18px;
+  border: 2px solid #aaa;
+  border-radius: 50%;
+`;
+
+const SentenceText = styled.span`
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+`;
+
+// --- MAIN COMPONENT ---
+function ChooseSentenceView({ onBack, onSelectSentence }) {
+    const [openTopic, setOpenTopic] = useState('');
+
+    const toggleTopic = (topicName) => {
+        setOpenTopic(openTopic === topicName ? '' : topicName);
+    };
+
+    return (
+        <ViewContainer>
+            {/* แถบบนสุด: ปุ่มย้อนกลับ และ เปอร์เซ็นต์ความคืบหน้า */}
+            <TopBar>
+                <BackButton onClick={onBack}>⭠</BackButton>
+                <ProgressText>ความคืบหน้า 0%</ProgressText>
+            </TopBar>
+
+            <PageTitle>เลือกหมวดหมู่ที่ต้องการ</PageTitle>
+
+            {/* หมวดหมู่ที่ 1: พบกันครั้งแรก (ขยายออกอยู่ตามภาพ) */}
+            <TopicGroup>
+                <TopicHeaderCard onClick={() => toggleTopic('topic1')}>
+                    <TopicLeftSection>
+                        <IconContainer>
+                            <span style={{ fontSize: '32px' }}>🙋‍♀️</span>
+                            <StatusText>ยังไม่ผ่าน</StatusText>
+                        </IconContainer>
+                        <TopicTitle>พบกันครั้งแรก</TopicTitle>
+                    </TopicLeftSection>
+                    <ArrowCircle isOpen={openTopic === 'topic1'}>▶</ArrowCircle>
+                </TopicHeaderCard>
+
+                {openTopic === 'topic1' && (
+                    <SubListWrapper>
+                        <SentenceItemRow onClick>
+                            <RadioCircle />
+                            <SentenceText>สวัสดี</SentenceText>
+                        </SentenceItemRow>
+                        <SentenceItemRow onClick>
+                            <RadioCircle />
+                            <SentenceText>คุณชื่ออะไร</SentenceText>
+                        </SentenceItemRow>
+                        <SentenceItemRow onClick>
+                            <RadioCircle />
+                            <SentenceText>ฉันชื่อมานี</SentenceText>
+                        </SentenceItemRow>
+                        <SentenceItemRow onClick={onSelectSentence}>
+                            <RadioCircle />
+                            <SentenceText>ยินดีที่ได้รู้จัก</SentenceText>
+                        </SentenceItemRow>
+                    </SubListWrapper>
+                )}
+            </TopicGroup>
+
+            {/* หมวดหมู่ที่ 2: การทักทาย (หดอยู่ตามภาพ) */}
+            <TopicGroup>
+                <TopicHeaderCard onClick={() => toggleTopic('topic2')}>
+                    <TopicLeftSection>
+                        <IconContainer>
+                            <span style={{ fontSize: '32px' }}>🚪</span>
+                            <StatusText>ยังไม่ผ่าน</StatusText>
+                        </IconContainer>
+                        <TopicTitle>การทักทาย</TopicTitle>
+                    </TopicLeftSection>
+                    <ArrowCircle isOpen={openTopic === 'topic2'}>▶</ArrowCircle>
+                </TopicHeaderCard>
+
+                {openTopic === 'topic2' && (
+                    <SubListWrapper>
+                        <SentenceItemRow><RadioCircle /><SentenceText>อรุณสวัสดิ์</SentenceText></SentenceItemRow>
+                        <SentenceItemRow><RadioCircle /><SentenceText>สบายดีไหม</SentenceText></SentenceItemRow>
+                    </SubListWrapper>
+                )}
+            </TopicGroup>
+
+            {/* หมวดหมู่ที่ 3: ไปไหนดี? */}
+            <TopicGroup>
+                <TopicHeaderCard onClick={() => toggleTopic('topic3')}>
+                    <TopicLeftSection>
+                        <IconContainer>
+                            <span style={{ fontSize: '32px' }}>🏢</span>
+                            <StatusText>ยังไม่ผ่าน</StatusText>
+                        </IconContainer>
+                        <TopicTitle>ไปไหนดี?</TopicTitle>
+                    </TopicLeftSection>
+                    <ArrowCircle isOpen={openTopic === 'topic3'}>▶</ArrowCircle>
+                </TopicHeaderCard>
+            </TopicGroup>
+
+        </ViewContainer>
+    );
+}
+
+export default ChooseSentenceView;

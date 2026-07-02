@@ -139,7 +139,7 @@ const PrimaryOrangeButton = styled.button`
 `;
 
 // --- MAIN VIEW COMPONENT ---
-function HomeView({ currentLevel, onChangeLevel }) {
+function HomeView({ currentLevel, onChangeLevel, onContinue }) {
 
   const isMedium = currentLevel.id === 'medium';
 
@@ -147,28 +147,24 @@ function HomeView({ currentLevel, onChangeLevel }) {
     quote: isMedium
       ? `"บทเรียนระดับปานกลางจะช่วยเพิ่มความมั่นใจ\nและทำให้สำเนียงของคุณลื่นไหลเป็นธรรมชาติขึ้น"`
       : `"ฉันพร่ำบอกเธอเช้าค่ำ\nว่าภายใต้การดูแลของฉัน เธอจะปลอดภัย"`,
-    emoji: isMedium ? '🐥' : '🐣', // ใช้ Emoji แทนไฟล์ภาพรูปเดิม
+    emoji: isMedium ? '🐥' : '🐣',
     title: isMedium ? 'ปานกลาง' : 'เริ่มต้น',
     bgColor: isMedium ? '#feebc8' : '#c6f6d5'
   };
 
   return (
     <ContentWrapper>
-      {/* ส่วนบน: ประโยคประจำวัน */}
+      {/* ... โค้ดส่วนการ์ดประโยคประจำวันคงเดิม ... */}
       <SectionCard>
         <CardTitle>ประโยคประจำวัน</CardTitle>
         <DailyQuoteBox>
-          <QuoteText style={{ whiteSpace: 'pre-line' }}>
-            {contentData.quote}
-          </QuoteText>
+          <QuoteText style={{ whiteSpace: 'pre-line' }}>{contentData.quote}</QuoteText>
           <AudioButton onClick={() => alert('เล่นเสียงพูด...')}>🔊</AudioButton>
         </DailyQuoteBox>
-        <DarkActionButton onClick={() => alert('เริ่มบันทึกเสียงพูด!')}>
-          ฉันอยากลองพูด!
-        </DarkActionButton>
+        <DarkActionButton onClick={() => alert('เริ่มบันทึกเสียงพูด!')}>ฉันอยากลองพูด!</DarkActionButton>
       </SectionCard>
 
-      {/* ส่วนล่าง: ระดับปัจจุบัน */}
+      {/* ส่วนระดับปัจจุบัน */}
       <SectionCard style={{ paddingBottom: '15px' }}>
         <FlexHeader>
           <CardTitle style={{ margin: 0 }}>ระดับปัจจุบัน</CardTitle>
@@ -177,21 +173,19 @@ function HomeView({ currentLevel, onChangeLevel }) {
 
         <StatusProgressCard bgColor={contentData.bgColor}>
           <StatusInfoRow>
-            {/* เรียกใช้ Component Emoji ตรงนี้ */}
             <LevelEmoji>{contentData.emoji}</LevelEmoji>
-            <div>
+            <div style={{ textAlign: 'left' }}>
               <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>{contentData.title}</h4>
               <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#444' }}>ประโยคพื้นฐาน</p>
             </div>
           </StatusInfoRow>
 
-          <ProgressBarContainer>
-            <ProgressBarFill />
-          </ProgressBarContainer>
+          <ProgressBarContainer><ProgressBarFill /></ProgressBarContainer>
           <ProgressPercentText>ความคืบหน้า 0%</ProgressPercentText>
         </StatusProgressCard>
 
-        <PrimaryOrangeButton onClick={() => alert(`กำลังเข้าสู่บทเรียนระดับ ${contentData.title}...`)}>
+        {/* 🛠️ แก้ไขตรงนี้: ผูกเหตุการณ์ onClick ให้ไปเรียกฟังก์ชัน onContinue */}
+        <PrimaryOrangeButton onClick={onContinue}>
           ▶ เรียนต่อ
         </PrimaryOrangeButton>
       </SectionCard>
