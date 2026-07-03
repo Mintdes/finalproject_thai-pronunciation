@@ -21,7 +21,6 @@ const SectionCard = styled.div`
 const CardTitle = styled.h3`
   margin: 0 0 15px 0;
   font-size: 18px;
-  font-weight: bold;
   color: #222;
 `;
 
@@ -73,8 +72,7 @@ const FlexHeader = styled.div`
 
 const ChangeTextLink = styled.span`
   color: #f97316;
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 14px;
   cursor: pointer;
 `;
 
@@ -145,10 +143,10 @@ function HomeView({ currentLevel, onChangeLevel, onContinue }) {
 
   const contentData = {
     quote: isMedium
-      ? `"บทเรียนระดับปานกลางจะช่วยเพิ่มความมั่นใจ\nและทำให้สำเนียงของคุณลื่นไหลเป็นธรรมชาติขึ้น"`
+      ? `"หมาป่าที่เคยเดียวดาย มันเพิ่งได้ลองลิ้มรสของน้ำผึ้งหวานแค่หกเดือนเองนะ"`
       : `"ฉันพร่ำบอกเธอเช้าค่ำ\nว่าภายใต้การดูแลของฉัน เธอจะปลอดภัย"`,
     emoji: isMedium ? '🐥' : '🐣',
-    title: isMedium ? 'ปานกลาง' : 'เริ่มต้น',
+    title: isMedium ? 'Medium' : 'Beginner',
     bgColor: isMedium ? '#feebc8' : '#c6f6d5'
   };
 
@@ -156,19 +154,19 @@ function HomeView({ currentLevel, onChangeLevel, onContinue }) {
     <ContentWrapper>
       {/* ... โค้ดส่วนการ์ดประโยคประจำวันคงเดิม ... */}
       <SectionCard>
-        <CardTitle>ประโยคประจำวัน</CardTitle>
+        <CardTitle>Daily Sentence</CardTitle>
         <DailyQuoteBox>
           <QuoteText style={{ whiteSpace: 'pre-line' }}>{contentData.quote}</QuoteText>
           <AudioButton onClick={() => alert('เล่นเสียงพูด...')}>🔊</AudioButton>
         </DailyQuoteBox>
-        <DarkActionButton onClick={() => alert('เริ่มบันทึกเสียงพูด!')}>ฉันอยากลองพูด!</DarkActionButton>
+        <DarkActionButton onClick={() => alert('เริ่มบันทึกเสียงพูด!')}>I want to try!</DarkActionButton>
       </SectionCard>
 
       {/* ส่วนระดับปัจจุบัน */}
       <SectionCard style={{ paddingBottom: '15px' }}>
         <FlexHeader>
-          <CardTitle style={{ margin: 0 }}>ระดับปัจจุบัน</CardTitle>
-          <ChangeTextLink onClick={onChangeLevel}>เปลี่ยน</ChangeTextLink>
+          <CardTitle style={{ margin: 0 }}>Current Level</CardTitle>
+          <ChangeTextLink onClick={onChangeLevel}>change</ChangeTextLink>
         </FlexHeader>
 
         <StatusProgressCard bgColor={contentData.bgColor}>
@@ -176,17 +174,17 @@ function HomeView({ currentLevel, onChangeLevel, onContinue }) {
             <LevelEmoji>{contentData.emoji}</LevelEmoji>
             <div style={{ textAlign: 'left' }}>
               <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>{contentData.title}</h4>
-              <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#444' }}>ประโยคพื้นฐาน</p>
+              <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#444' }}>Basic Sentence</p>
             </div>
           </StatusInfoRow>
 
           <ProgressBarContainer><ProgressBarFill /></ProgressBarContainer>
-          <ProgressPercentText>ความคืบหน้า 0%</ProgressPercentText>
+          <ProgressPercentText>Progress 0%</ProgressPercentText>
         </StatusProgressCard>
 
         {/* 🛠️ แก้ไขตรงนี้: ผูกเหตุการณ์ onClick ให้ไปเรียกฟังก์ชัน onContinue */}
         <PrimaryOrangeButton onClick={onContinue}>
-          ▶ เรียนต่อ
+          ▶ Continue
         </PrimaryOrangeButton>
       </SectionCard>
     </ContentWrapper>

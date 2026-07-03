@@ -155,94 +155,94 @@ const SentenceText = styled.span`
 
 // --- MAIN COMPONENT ---
 function ChooseSentenceView({ onBack, onSelectSentence }) {
-    const [openTopic, setOpenTopic] = useState('');
+  const [openTopic, setOpenTopic] = useState('');
 
-    const toggleTopic = (topicName) => {
-        setOpenTopic(openTopic === topicName ? '' : topicName);
-    };
+  const toggleTopic = (topicName) => {
+    setOpenTopic(openTopic === topicName ? '' : topicName);
+  };
 
-    return (
-        <ViewContainer>
-            {/* แถบบนสุด: ปุ่มย้อนกลับ และ เปอร์เซ็นต์ความคืบหน้า */}
-            <TopBar>
-                <BackButton onClick={onBack}>⭠</BackButton>
-                <ProgressText>ความคืบหน้า 0%</ProgressText>
-            </TopBar>
+  return (
+    <ViewContainer>
+      {/* แถบบนสุด: ปุ่มย้อนกลับ และ เปอร์เซ็นต์ความคืบหน้า */}
+      <TopBar>
+        <BackButton onClick={onBack}>⭠</BackButton>
+        <ProgressText>Progress 0%</ProgressText>
+      </TopBar>
 
-            <PageTitle>เลือกหมวดหมู่ที่ต้องการ</PageTitle>
+      <PageTitle>Choose the lesson to learn</PageTitle>
 
-            {/* หมวดหมู่ที่ 1: พบกันครั้งแรก (ขยายออกอยู่ตามภาพ) */}
-            <TopicGroup>
-                <TopicHeaderCard onClick={() => toggleTopic('topic1')}>
-                    <TopicLeftSection>
-                        <IconContainer>
-                            <span style={{ fontSize: '32px' }}>🙋‍♀️</span>
-                            <StatusText>ยังไม่ผ่าน</StatusText>
-                        </IconContainer>
-                        <TopicTitle>พบกันครั้งแรก</TopicTitle>
-                    </TopicLeftSection>
-                    <ArrowCircle isOpen={openTopic === 'topic1'}>▶</ArrowCircle>
-                </TopicHeaderCard>
+      {/* หมวดหมู่ที่ 1: พบกันครั้งแรก (ขยายออกอยู่ตามภาพ) */}
+      <TopicGroup>
+        <TopicHeaderCard onClick={() => toggleTopic('topic1')}>
+          <TopicLeftSection>
+            <IconContainer>
+              <span style={{ fontSize: '32px' }}>🙋‍♀️</span>
+              <StatusText>not pass</StatusText>
+            </IconContainer>
+            <TopicTitle>First Meet</TopicTitle>
+          </TopicLeftSection>
+          <ArrowCircle isOpen={openTopic === 'topic1'}>▶</ArrowCircle>
+        </TopicHeaderCard>
 
-                {openTopic === 'topic1' && (
-                    <SubListWrapper>
-                        <SentenceItemRow onClick>
-                            <RadioCircle />
-                            <SentenceText>สวัสดี</SentenceText>
-                        </SentenceItemRow>
-                        <SentenceItemRow onClick>
-                            <RadioCircle />
-                            <SentenceText>คุณชื่ออะไร</SentenceText>
-                        </SentenceItemRow>
-                        <SentenceItemRow onClick>
-                            <RadioCircle />
-                            <SentenceText>ฉันชื่อมานี</SentenceText>
-                        </SentenceItemRow>
-                        <SentenceItemRow onClick={onSelectSentence}>
-                            <RadioCircle />
-                            <SentenceText>ยินดีที่ได้รู้จัก</SentenceText>
-                        </SentenceItemRow>
-                    </SubListWrapper>
-                )}
-            </TopicGroup>
+        {openTopic === 'topic1' && (
+          <SubListWrapper>
+            <SentenceItemRow onClick>
+              <RadioCircle />
+              <SentenceText>สวัสดี</SentenceText>
+            </SentenceItemRow>
+            <SentenceItemRow onClick>
+              <RadioCircle />
+              <SentenceText>คุณชื่ออะไร</SentenceText>
+            </SentenceItemRow>
+            <SentenceItemRow onClick>
+              <RadioCircle />
+              <SentenceText>ฉันชื่อมานี</SentenceText>
+            </SentenceItemRow>
+            <SentenceItemRow onClick={onSelectSentence}>
+              <RadioCircle />
+              <SentenceText>ยินดีที่ได้รู้จัก</SentenceText>
+            </SentenceItemRow>
+          </SubListWrapper>
+        )}
+      </TopicGroup>
 
-            {/* หมวดหมู่ที่ 2: การทักทาย (หดอยู่ตามภาพ) */}
-            <TopicGroup>
-                <TopicHeaderCard onClick={() => toggleTopic('topic2')}>
-                    <TopicLeftSection>
-                        <IconContainer>
-                            <span style={{ fontSize: '32px' }}>🚪</span>
-                            <StatusText>ยังไม่ผ่าน</StatusText>
-                        </IconContainer>
-                        <TopicTitle>การทักทาย</TopicTitle>
-                    </TopicLeftSection>
-                    <ArrowCircle isOpen={openTopic === 'topic2'}>▶</ArrowCircle>
-                </TopicHeaderCard>
+      {/* หมวดหมู่ที่ 2: การทักทาย (หดอยู่ตามภาพ) */}
+      <TopicGroup>
+        <TopicHeaderCard onClick={() => toggleTopic('topic2')}>
+          <TopicLeftSection>
+            <IconContainer>
+              <span style={{ fontSize: '32px' }}>🚪</span>
+              <StatusText>not pass</StatusText>
+            </IconContainer>
+            <TopicTitle>Greeting</TopicTitle>
+          </TopicLeftSection>
+          <ArrowCircle isOpen={openTopic === 'topic2'}>▶</ArrowCircle>
+        </TopicHeaderCard>
 
-                {openTopic === 'topic2' && (
-                    <SubListWrapper>
-                        <SentenceItemRow><RadioCircle /><SentenceText>อรุณสวัสดิ์</SentenceText></SentenceItemRow>
-                        <SentenceItemRow><RadioCircle /><SentenceText>สบายดีไหม</SentenceText></SentenceItemRow>
-                    </SubListWrapper>
-                )}
-            </TopicGroup>
+        {openTopic === 'topic2' && (
+          <SubListWrapper>
+            <SentenceItemRow><RadioCircle /><SentenceText>อรุณสวัสดิ์</SentenceText></SentenceItemRow>
+            <SentenceItemRow><RadioCircle /><SentenceText>สบายดีไหม</SentenceText></SentenceItemRow>
+          </SubListWrapper>
+        )}
+      </TopicGroup>
 
-            {/* หมวดหมู่ที่ 3: ไปไหนดี? */}
-            <TopicGroup>
-                <TopicHeaderCard onClick={() => toggleTopic('topic3')}>
-                    <TopicLeftSection>
-                        <IconContainer>
-                            <span style={{ fontSize: '32px' }}>🏢</span>
-                            <StatusText>ยังไม่ผ่าน</StatusText>
-                        </IconContainer>
-                        <TopicTitle>ไปไหนดี?</TopicTitle>
-                    </TopicLeftSection>
-                    <ArrowCircle isOpen={openTopic === 'topic3'}>▶</ArrowCircle>
-                </TopicHeaderCard>
-            </TopicGroup>
+      {/* หมวดหมู่ที่ 3: ไปไหนดี? */}
+      <TopicGroup>
+        <TopicHeaderCard onClick={() => toggleTopic('topic3')}>
+          <TopicLeftSection>
+            <IconContainer>
+              <span style={{ fontSize: '32px' }}>🏢</span>
+              <StatusText>not pass</StatusText>
+            </IconContainer>
+            <TopicTitle>Where to go?</TopicTitle>
+          </TopicLeftSection>
+          <ArrowCircle isOpen={openTopic === 'topic3'}>▶</ArrowCircle>
+        </TopicHeaderCard>
+      </TopicGroup>
 
-        </ViewContainer>
-    );
+    </ViewContainer>
+  );
 }
 
 export default ChooseSentenceView;

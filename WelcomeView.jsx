@@ -16,7 +16,7 @@ const StartLearningTitle = styled.h2`
   font-size: 20px;
   font-weight: bold;
   color: #222;
-  margin: 0;
+  margin: 5px;
 `;
 
 const IllustrationImage = styled.img`
@@ -31,6 +31,7 @@ const ActionButtonGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  margin: 15px;
 `;
 
 const ActionButton = styled.button`
@@ -40,7 +41,7 @@ const ActionButton = styled.button`
   border: none;
   border-radius: 25px;
   padding: 16px 25px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   width: 100%;
@@ -68,9 +69,9 @@ const BigConfirmIconBox = styled.div`
 `;
 const BigIconText = styled.span` font-size: 50px; line-height: 1; `;
 const BigIconLabel = styled.span` font-size: 20px; font-weight: bold; color: #222; margin-top: 8px; `;
-const ConfirmQuestionText = styled.p` font-size: 16px; font-weight: bold; color: #222; margin: 10px 0 25px 0; `;
+const ConfirmQuestionText = styled.p` font-size: 16px; color: #222; margin: 10px 0 25px 0; `;
 const PopupButtonGroup = styled.div` width: 100%; display: flex; justify-content: space-between; gap: 12px; `;
-const PopupButton = styled.button` font-family: inherit; flex: 1; border: none; border-radius: 25px; padding: 12px 20px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; background-color: ${props => props.variant === 'confirm' ? '#f97316' : '#222222'}; `;
+const PopupButton = styled.button` font-family: inherit; flex: 1; border: none; border-radius: 25px; padding: 12px 20px; font-size: 16px; cursor: pointer; color: white; background-color: ${props => props.variant === 'confirm' ? '#f97316' : '#222222'}; `;
 
 function WelcomeView({ onConfirmSelection }) {
     const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
@@ -85,20 +86,20 @@ function WelcomeView({ onConfirmSelection }) {
 
     return (
         <StartLearningContainer>
-            <StartLearningTitle>เริ่มต้นการเรียนรู้ของคุณ</StartLearningTitle>
+            <StartLearningTitle>Start your lesson</StartLearningTitle>
 
             <IllustrationImage src={talkingImg} alt="Learning Illustration" />
 
             <ActionButtonGroup>
                 <div>
                     <ActionButton onClick={() => { setModalStage('select'); setIsLevelModalOpen(true); }}>
-                        เลือกระดับความยาก
+                        Select Level
                     </ActionButton>
-                    <HintText>เลือกเรียนระดับไหนก็ได้ตามต้องการ</HintText>
+                    <HintText>Choose any level you want to learn</HintText>
                 </div>
                 <div>
-                    <ActionButton>วัดระดับการฝึกออกเสียงภาษาไทย</ActionButton>
-                    <HintText>วัดระดับเพื่อให้เราเลือกหลักสูตรที่เหมาะกับคุณ</HintText>
+                    <ActionButton>Assess pronunciation proficiency</ActionButton>
+                    <HintText>Assess your Thai pronunciation proficiency to select the lesson for you</HintText>
                 </div>
             </ActionButtonGroup>
 
@@ -110,20 +111,20 @@ function WelcomeView({ onConfirmSelection }) {
                                 <CloseButton onClick={() => setIsLevelModalOpen(false)}>✕</CloseButton>
                                 <LevelOptionsContainer>
                                     {/* ปุ่มกดระดับเริ่มต้น */}
-                                    <LevelCard bgColor="#c6f6d5" onClick={() => handleSelectLevel({ id: 'easy', title: 'เริ่มต้น', icon: '🐣', color: '#c6f6d5' })}>
+                                    <LevelCard bgColor="#c6f6d5" onClick={() => handleSelectLevel({ id: 'easy', title: 'Beginner', icon: '🐣', color: '#c6f6d5' })}>
                                         <div style={{ fontSize: '28px' }}>🐣</div>
                                         <div style={{ textalign: 'left', marginLeft: '10px' }}>
-                                            <h3 style={{ margin: 0, fontSize: '16px' }}>เริ่มต้น</h3>
-                                            <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#555' }}>ประโยคพื้นฐาน</p>
+                                            <h3 style={{ margin: 0, fontSize: '16px' }}>Beginner</h3>
+                                            <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#555' }}>Basic Sentence</p>
                                         </div>
                                     </LevelCard>
 
                                     {/* ปุ่มกดระดับปานกลาง */}
-                                    <LevelCard bgColor="#feebc8" onClick={() => handleSelectLevel({ id: 'medium', title: 'ปานกลาง', icon: '🐥', color: '#feebc8' })}>
+                                    <LevelCard bgColor="#feebc8" onClick={() => handleSelectLevel({ id: 'medium', title: 'Medium', icon: '🐥', color: '#feebc8' })}>
                                         <div style={{ fontSize: '28px' }}>🐥</div>
                                         <div style={{ textalign: 'left', marginLeft: '10px' }}>
-                                            <h3 style={{ margin: 0, fontSize: '16px' }}>ปานกลาง</h3>
-                                            <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#555' }}>ประโยคพื้นฐาน</p>
+                                            <h3 style={{ margin: 0, fontSize: '16px' }}>Medium</h3>
+                                            <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#555' }}>Interactive Sentence</p>
                                         </div>
                                     </LevelCard>
                                 </LevelOptionsContainer>
@@ -135,13 +136,13 @@ function WelcomeView({ onConfirmSelection }) {
                                     <BigIconText>{chosenLevel.icon}</BigIconText>
                                     <BigIconLabel>{chosenLevel.title}</BigIconLabel>
                                 </BigConfirmIconBox>
-                                <ConfirmQuestionText>ยืนยันเลือกระดับนี้หรือไม่?</ConfirmQuestionText>
+                                <ConfirmQuestionText>Are you sure to select this level?</ConfirmQuestionText>
                                 <PopupButtonGroup>
                                     <PopupButton variant="confirm" onClick={() => { setIsLevelModalOpen(false); onConfirmSelection(chosenLevel); }}>
-                                        ยืนยัน
+                                        Confirm
                                     </PopupButton>
                                     <PopupButton variant="cancel" onClick={() => setModalStage('select')}>
-                                        ยกเลิก
+                                        Cancel
                                     </PopupButton>
                                 </PopupButtonGroup>
                             </>
