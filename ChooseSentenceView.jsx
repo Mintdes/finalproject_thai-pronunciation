@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import helloImg from '../assets/hi.png';
+import howgoingImg from '../assets/howgoing.png';
 import meetingImg from '../assets/meeting.png';
+import morningImg from '../assets/morning.png';
 import helloAudio from '../assets/oriaudio/ai-sawasdee.wav';
 import whaturnameAudio from '../assets/oriaudio/ai0.8-whaturname.wav';
 import niceToMeetYouAudio from '../assets/oriaudio/ai0.9-nice2meetu.wav';
+import howgoingAudio from '../assets/oriaudio/howgoing.mp3';
+import morningAudio from '../assets/oriaudio/morning.mp3';
 import whaturnameImg from '../assets/whaturname.png';
 
 // --- STYLED COMPONENTS ---
@@ -65,7 +69,7 @@ const TopicGroup = styled.div`
 
 const TopicHeaderCard = styled.div`
   width: 100%;
-  background-color: #c6f6d5; /* สีเขียวพาสเทลตามภาพ */
+  background-color: #c6f6d5;
   border-radius: 20px;
   padding: 15px 20px;
   box-sizing: border-box;
@@ -115,10 +119,9 @@ const ArrowCircle = styled.div`
   transition: transform 0.2s ease;
 `;
 
-// กล่องสีเทาเก็บรายชื่อประโยคย่อยภายในหมวดหมู่
 const SubListWrapper = styled.div`
   width: 100%;
-  background-color: #f3f4f6; /* พื้นหลังกล่องสีเทาซ้อนตามภาพ */
+  background-color: #f3f4f6;
   border-radius: 20px;
   padding: 15px;
   box-sizing: border-box;
@@ -160,14 +163,20 @@ const SentenceText = styled.span`
 `;
 
 // --- MAIN COMPONENT ---
-function ChooseSentenceView({ onBack, onSelectSentence }) {
-  const [openTopic, setOpenTopic] = useState('');
+// 🆕 2. เพิ่มการรับพารามิเตอร์พร็อพจากไฟล์แม่ฝั่ง App
+function ChooseSentenceView({ onBack, onSelectSentence, initialTopic, onTopicToggle }) {
+  // 🆕 3. ใช้ค่าเริ่มต้นที่ถูกพ่นต่อมาจากตัวแม่
+  const [openTopic, setOpenTopic] = useState(initialTopic || '');
 
   const toggleTopic = (topicName) => {
-    setOpenTopic(openTopic === topicName ? '' : topicName);
+    const nextTopic = openTopic === topicName ? '' : topicName;
+    setOpenTopic(nextTopic);
+    // 🆕 4. อัปเดตค่านั้นแจกคืนกลับไปให้ App.jsx บันทึกไว้เผื่อกรณีที่ย้อนกลับมา
+    if (onTopicToggle) {
+      onTopicToggle(nextTopic);
+    }
   };
 
-  // 2. สร้างฟังก์ชันเมื่อจิ้มเลือกประโยค เพื่อจัดกลุ่มข้อมูลส่งขึ้นไป
   const handlePickSentence = (thai, karaoke, eng, image, audio) => {
     onSelectSentence({ thai, karaoke, eng, image, audio });
   };
@@ -195,7 +204,6 @@ function ChooseSentenceView({ onBack, onSelectSentence }) {
 
         {openTopic === 'topic1' && (
           <SubListWrapper>
-            {/* 🛠️ ผูกปุ่มคำว่า "สวัสดี" */}
             <SentenceItemRow onClick={() => handlePickSentence('สวัสดี', 'Sa-wat-di', 'Hello', helloImg, helloAudio)}>
               <RadioCircle />
               <SentenceText>สวัสดี</SentenceText>
@@ -206,7 +214,6 @@ function ChooseSentenceView({ onBack, onSelectSentence }) {
               <SentenceText>คุณชื่ออะไร</SentenceText>
             </SentenceItemRow>
 
-            {/* 🛠️ ผูกปุ่มคำว่า "ยินดีที่ได้รู้จัก" */}
             <SentenceItemRow onClick={() => handlePickSentence('ยินดีที่ได้รู้จัก', 'Yin-di-Thi-Dai-Ru-chak', 'Nice to meet you.', meetingImg, niceToMeetYouAudio)}>
               <RadioCircle />
               <SentenceText>ยินดีที่ได้รู้จัก</SentenceText>
@@ -215,7 +222,6 @@ function ChooseSentenceView({ onBack, onSelectSentence }) {
         )}
       </TopicGroup>
 
-      {/* หมวดหมู่ที่ 2: การทักทาย (หดอยู่ตามภาพ) */}
       <TopicGroup>
         <TopicHeaderCard onClick={() => toggleTopic('topic2')}>
           <TopicLeftSection>
@@ -230,13 +236,18 @@ function ChooseSentenceView({ onBack, onSelectSentence }) {
 
         {openTopic === 'topic2' && (
           <SubListWrapper>
-            <SentenceItemRow><RadioCircle /><SentenceText>อรุณสวัสดิ์</SentenceText></SentenceItemRow>
-            <SentenceItemRow><RadioCircle /><SentenceText>สบายดีไหม</SentenceText></SentenceItemRow>
+            <SentenceItemRow onClick={() => handlePickSentence('อรุณสวัสดิ์', 'A-run-Sa-wat', 'Good Morning', morningImg, morningAudio)}>
+              <RadioCircle />
+              <SentenceText>อรุณสวัสดิ์</SentenceText>
+            </SentenceItemRow>
+            <SentenceItemRow onClick={() => handlePickSentence('สบายดีไหม', 'Sa-bai-Di-Mai?', 'How are you?', howgoingImg, howgoingAudio)}>
+              <RadioCircle />
+              <SentenceText>สบายดีไหม</SentenceText>
+            </SentenceItemRow>
           </SubListWrapper>
         )}
       </TopicGroup>
 
-      {/* หมวดหมู่ที่ 3: ไปไหนดี? */}
       <TopicGroup>
         <TopicHeaderCard onClick={() => toggleTopic('topic3')}>
           <TopicLeftSection>

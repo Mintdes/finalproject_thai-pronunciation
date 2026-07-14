@@ -128,6 +128,7 @@ function App() {
   const [currentView, setCurrentView] = useState('welcome');
   const [activeLevel, setActiveLevel] = useState({ id: 'easy', title: 'เริ่มต้น', icon: '🐣', color: '#c6f6d5' });
   const [selectedPhrase, setSelectedPhrase] = useState(null);
+  const [currentTopic, setCurrentTopic] = useState('');
 
   const userName = "The one and only Theerakit K. Lee";
 
@@ -172,6 +173,9 @@ function App() {
       return (
         <ChooseSentenceView
           onBack={() => setCurrentView('home')}
+          // 🆕 1. ส่งค่า State และฟังก์ชันการเปลี่ยนแปลงลงไป
+          initialTopic={currentTopic}
+          onTopicToggle={(topic) => setCurrentTopic(topic)}
           onSelectSentence={(phraseData) => {
             setSelectedPhrase(phraseData);
             setCurrentView('practice');
