@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import shakeHandsImg from '../assets/meeting.png';
 
 // --- STYLED COMPONENTS ---
 const ViewContainer = styled.div`
@@ -44,7 +43,7 @@ const WhiteCard = styled.div`
   height: 67%;
   background: white;
   border-radius: 45px;
-  padding: 30px 20px;
+  padding: 25px 20px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -71,22 +70,32 @@ const TargetPhraseCard = styled.div`
   width: 100%;
   background-color: #c6f6d5; /* สีเขียวพาสเทล */
   border-radius: 20px;
-  padding: 20px;
+  padding: 15px;
   box-sizing: border-box;
   text-align: center;
   margin-bottom: 10px;
 `;
 
 const ThaiPhrase = styled.h2`
-  margin: 0 0 8px 0;
-  font-size: 26px;
+  margin: 0 0 3px 0;
+  font-size: 24px;
   font-weight: bold;
   color: #000;
 `;
 
+// วางไว้ด้านบนร่วมกับ Styled Components ตัวอื่น ๆ ในไฟล์
+const PronunciationText = styled.p`
+  font-size: 16px;
+  font-weight: 500;
+  color: #f97316; /* ใช้สีส้มเพื่อให้เด่นชัดสำหรับคนฝึกออกเสียง */
+  font-style: italic;
+  margin: 10px 0;
+  text-align: center;
+`;
+
 const EngTranslation = styled.p`
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   color: #222;
   font-weight: 500;
 `;
@@ -125,31 +134,42 @@ const TapToSpeakText = styled.span`
 `;
 
 // --- MAIN COMPONENT ---
-function PracticeView({ onBack }) {
-    return (
-        <ViewContainer>
-            <BackButtonWrapper>
-                <CircularBackButton onClick={onBack}>⭠</CircularBackButton>
-            </BackButtonWrapper>
+// 🛠️ ปรับให้รับข้อมูลชิ้นประโยค (phraseData) มาจากตัวแม่
+function PracticeView({ onBack, phraseData }) {
 
-            <WhiteCard>
-                <SubtitleText>Speak the phrase / พูดประโยค</SubtitleText>
+  const handlePlayAudio = () => {
+    if (!phraseData?.audio) return;
+    const audio = new Audio(phraseData.audio);
+    audio.play().catch(error => {
+      console.error("เกิดข้อผิดพลาดในการเล่นเสียง:", error);
+    });
+  };
 
-                {/* รูปภาพประกอบคนจับมือกัน */}
-                <Illustration src={shakeHandsImg} alt="Practice Illustration" onError={(e) => { e.target.style.display = 'none'; }} />
+  return (
+    <ViewContainer>
+      <BackButtonWrapper>
+        <CircularBackButton onClick={onBack}>⭠</CircularBackButton>
+      </BackButtonWrapper>
 
-                <TargetPhraseCard>
-                    <ThaiPhrase>ยินดีที่ได้รู้จัก</ThaiPhrase>
-                    <EngTranslation>Nice to meet you.</EngTranslation>
-                </TargetPhraseCard>
+      <WhiteCard>
+        <SubtitleText>Speak the phrase</SubtitleText>
+        {/* ดึงรูปภาพแบบ Dynamic */}
+        <Illustration src={phraseData?.image} alt="Practice Illustration" onError={(e) => { e.target.style.display = 'none'; }} />
 
-                <SpeakerButton onClick={() => alert('เปิดเสียงออดิโอต้นแบบ...')}>🔊</SpeakerButton>
-            </WhiteCard>
+        <TargetPhraseCard>
+          {/* ดึงข้อความคำแปลแบบ Dynamic */}
+          <ThaiPhrase>{phraseData?.thai || 'ไม่มีข้อมูล'}</ThaiPhrase>
+          <PronunciationText>{phraseData?.karaoke || ''}</PronunciationText>
+          <EngTranslation>{phraseData?.eng || ''}</EngTranslation>
+        </TargetPhraseCard>
 
-            <MicButton onClick={() => alert('เริ่มบันทึกเสียงพูดของคุณ...')}>🎙️</MicButton>
-            <TapToSpeakText>Tap to speak</TapToSpeakText>
-        </ViewContainer>
-    );
+        <SpeakerButton onClick={handlePlayAudio}>🔊</SpeakerButton>
+      </WhiteCard>
+
+      <MicButton onClick={() => alert(`เริ่มบันทึกเสียงพูดประโยค "${phraseData?.thai}" ของคุณ...`)}>🎙️</MicButton>
+      <TapToSpeakText>Tap to speak</TapToSpeakText>
+    </ViewContainer>
+  );
 }
 
 export default PracticeView;

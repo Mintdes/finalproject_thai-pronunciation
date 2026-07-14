@@ -1,5 +1,11 @@
 import { useState } from 'react';
 import styled from 'styled-components';
+import helloImg from '../assets/hi.png';
+import meetingImg from '../assets/meeting.png';
+import helloAudio from '../assets/oriaudio/ai-sawasdee.wav';
+import whaturnameAudio from '../assets/oriaudio/ai0.8-whaturname.wav';
+import niceToMeetYouAudio from '../assets/oriaudio/ai0.9-nice2meetu.wav';
+import whaturnameImg from '../assets/whaturname.png';
 
 // --- STYLED COMPONENTS ---
 const ViewContainer = styled.div`
@@ -161,17 +167,20 @@ function ChooseSentenceView({ onBack, onSelectSentence }) {
     setOpenTopic(openTopic === topicName ? '' : topicName);
   };
 
+  // 2. สร้างฟังก์ชันเมื่อจิ้มเลือกประโยค เพื่อจัดกลุ่มข้อมูลส่งขึ้นไป
+  const handlePickSentence = (thai, karaoke, eng, image, audio) => {
+    onSelectSentence({ thai, karaoke, eng, image, audio });
+  };
+
   return (
     <ViewContainer>
-      {/* แถบบนสุด: ปุ่มย้อนกลับ และ เปอร์เซ็นต์ความคืบหน้า */}
       <TopBar>
         <BackButton onClick={onBack}>⭠</BackButton>
         <ProgressText>Progress 0%</ProgressText>
       </TopBar>
 
-      <PageTitle>Choose the lesson to learn</PageTitle>
+      <PageTitle>Choose the lesson</PageTitle>
 
-      {/* หมวดหมู่ที่ 1: พบกันครั้งแรก (ขยายออกอยู่ตามภาพ) */}
       <TopicGroup>
         <TopicHeaderCard onClick={() => toggleTopic('topic1')}>
           <TopicLeftSection>
@@ -179,26 +188,26 @@ function ChooseSentenceView({ onBack, onSelectSentence }) {
               <span style={{ fontSize: '32px' }}>🙋‍♀️</span>
               <StatusText>not pass</StatusText>
             </IconContainer>
-            <TopicTitle>First Meet</TopicTitle>
+            <TopicTitle>First Meeting</TopicTitle>
           </TopicLeftSection>
           <ArrowCircle isOpen={openTopic === 'topic1'}>▶</ArrowCircle>
         </TopicHeaderCard>
 
         {openTopic === 'topic1' && (
           <SubListWrapper>
-            <SentenceItemRow onClick>
+            {/* 🛠️ ผูกปุ่มคำว่า "สวัสดี" */}
+            <SentenceItemRow onClick={() => handlePickSentence('สวัสดี', 'Sa-wat-di', 'Hello', helloImg, helloAudio)}>
               <RadioCircle />
               <SentenceText>สวัสดี</SentenceText>
             </SentenceItemRow>
-            <SentenceItemRow onClick>
+
+            <SentenceItemRow onClick={() => handlePickSentence('คุณชื่ออะไร?', 'Khun-Chue-A-rai?', 'What is your name?', whaturnameImg, whaturnameAudio)}>
               <RadioCircle />
               <SentenceText>คุณชื่ออะไร</SentenceText>
             </SentenceItemRow>
-            <SentenceItemRow onClick>
-              <RadioCircle />
-              <SentenceText>ฉันชื่อมานี</SentenceText>
-            </SentenceItemRow>
-            <SentenceItemRow onClick={onSelectSentence}>
+
+            {/* 🛠️ ผูกปุ่มคำว่า "ยินดีที่ได้รู้จัก" */}
+            <SentenceItemRow onClick={() => handlePickSentence('ยินดีที่ได้รู้จัก', 'Yin-di-Thi-Dai-Ru-chak', 'Nice to meet you.', meetingImg, niceToMeetYouAudio)}>
               <RadioCircle />
               <SentenceText>ยินดีที่ได้รู้จัก</SentenceText>
             </SentenceItemRow>

@@ -4,6 +4,8 @@ import ChooseSentenceView from './components/ChooseSentenceView';
 import HomeView from './components/HomeView';
 import PracticeView from './components/PracticeView';
 import WelcomeView from './components/WelcomeView';
+// 🆕 1. Import LoginView เข้ามาใช้งาน
+import LoginView from './components/LoginView';
 
 // --- โครงสร้างเลย์เอาต์หลักของแอป ---
 const AppContainer = styled.div`
@@ -51,7 +53,6 @@ const RightIconsGroup = styled.div`
   gap: 15px;
 `;
 
-// 🛠️ เอา Effect การซูมเข้า-ออก ทิ้งไป เหลือแค่ปุ่มกดธรรมดา
 const LanguageButton = styled.button`
   background: none;
   border: none;
@@ -68,6 +69,7 @@ const ProfileIcon = styled.div`
   flex-direction: column;
   align-items: center;
   font-size: 12px;
+  cursor: pointer; /* 🆕 เปลี่ยน cursor เพื่อให้รู้ว่ากดได้ */
 `;
 
 const ProfileImagePlaceholder = styled.div`
@@ -120,8 +122,12 @@ const NotificationIcon = () => (
 );
 
 function App() {
+  // 🆕 2. สร้าง State เพื่อเช็คว่าล็อกอินหรือยัง (เริ่มต้นเป็น false เพื่อบังคับให้ผ่านหน้า Login ก่อน)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const [currentView, setCurrentView] = useState('welcome');
   const [activeLevel, setActiveLevel] = useState({ id: 'easy', title: 'เริ่มต้น', icon: '🐣', color: '#c6f6d5' });
+  const [selectedPhrase, setSelectedPhrase] = useState(null);
 
   const userName = "The one and only Theerakit K. Lee";
 
@@ -130,7 +136,26 @@ function App() {
     setCurrentView('home');
   };
 
+  // 🆕 3. ฟังก์ชันการจัดการเมื่อกดยืนยันการ Auth สำเร็จจาก LoginView
+  const handleAuthSuccess = () => {
+    setIsLoggedIn(true);
+    setCurrentView('welcome'); // เมื่อล็อกอินสำเร็จ ให้ส่งผู้ใช้ไปหน้าประเมินระดับ/เลือกเลเวลเริ่มต้น
+  };
+
+  // 🆕 4. ฟังก์ชันจำลองการ Log out (ผูกไว้กับปุ่ม Profile เผื่ออยากทดสอบสลับหน้า)
+  const handleLogOut = () => {
+    if (confirm("Do you want to log out?")) {
+      setIsLoggedIn(false);
+      setSelectedPhrase(null);
+    }
+  };
+
   const renderCurrentView = () => {
+    // 🆕 5. ถ้าสถานะยังไม่ได้ล็อกอิน ให้บังคับเรนเดอร์หน้าจอ LoginView เท่านั้น
+    if (!isLoggedIn) {
+      return <LoginView onAuthSuccess={handleAuthSuccess} />;
+    }
+
     if (currentView === 'welcome') {
       return <WelcomeView onConfirmSelection={handleConfirmSelection} />;
     }
@@ -138,7 +163,7 @@ function App() {
       return (
         <HomeView
           currentLevel={activeLevel}
-          onChangeLevel={() => setCurrentView('welcome')}
+          onChangeLevel={(newLevel) => setActiveLevel(newLevel)}
           onContinue={() => setCurrentView('choose_sentence')}
         />
       );
@@ -147,7 +172,10 @@ function App() {
       return (
         <ChooseSentenceView
           onBack={() => setCurrentView('home')}
-          onSelectSentence={() => setCurrentView('practice')}
+          onSelectSentence={(phraseData) => {
+            setSelectedPhrase(phraseData);
+            setCurrentView('practice');
+          }}
         />
       );
     }
@@ -155,6 +183,7 @@ function App() {
       return (
         <PracticeView
           onBack={() => setCurrentView('choose_sentence')}
+          phraseData={selectedPhrase}
         />
       );
     }
@@ -164,7 +193,8 @@ function App() {
   return (
     <AppContainer>
       <MainCard>
-        {currentView !== 'choose_sentence' && currentView !== 'practice' && (
+        {/* 🆕 6. ปรับเงื่อนไขตรวจสอบ: Header จะแสดงก็ต่อเมื่อล็อกอินแล้ว และไม่ได้อยู่ในหน้าเลือกประโยค/ฝึกฝน */}
+        {isLoggedIn && currentView !== 'choose_sentence' && currentView !== 'practice' && (
           <HeaderIcons>
             <LanguageButton>
               <LanguageIcon />
@@ -173,15 +203,16 @@ function App() {
             <RightIconsGroup>
               <div style={{ marginTop: '10px' }}><AchievementIcon /></div>
               <div style={{ marginTop: '10px' }}><NotificationIcon /></div>
-              <ProfileIcon>
+              <ProfileIcon onClick={handleLogOut}>
                 <ProfileImagePlaceholder>🐶</ProfileImagePlaceholder>
-                <span>Profile</span>
+                <span>Log out</span>
               </ProfileIcon>
             </RightIconsGroup>
           </HeaderIcons>
         )}
 
-        {currentView !== 'choose_sentence' && currentView !== 'practice' && (
+        {/* 🆕 7. ปรับเงื่อนไขตรวจสอบการแสดงข้อความต้อนรับเช่นเดียวกัน */}
+        {isLoggedIn && currentView !== 'choose_sentence' && currentView !== 'practice' && (
           <HeaderTextContainer>
             <GreetingText>Good Evening, {userName}</GreetingText>
             <UserSubtitle>Today, are you ready to learn Thai?</UserSubtitle>
@@ -189,6 +220,7 @@ function App() {
         )}
 
         {renderCurrentView()}
+
       </MainCard>
     </AppContainer>
   );

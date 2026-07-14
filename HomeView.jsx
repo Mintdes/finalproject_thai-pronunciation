@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import styled from 'styled-components';
 
-// --- STYLED COMPONENTS ---
+// --- STYLED COMPONENTS (สำหรับหน้าหลัก) ---
 const ContentWrapper = styled.div`
   width: 100%;
   display: flex;
@@ -21,6 +22,7 @@ const SectionCard = styled.div`
 const CardTitle = styled.h3`
   margin: 0 0 15px 0;
   font-size: 18px;
+  font-weight: bold;
   color: #222;
 `;
 
@@ -93,7 +95,6 @@ const StatusInfoRow = styled.div`
   gap: 15px;
 `;
 
-// เปลี่ยนจากแอดทริบิวต์รูปภาพ มาเป็นกล่องข้อความขนาดใหญ่สำหรับ Emoji
 const LevelEmoji = styled.span`
   font-size: 38px;
   line-height: 1;
@@ -133,11 +134,66 @@ const PrimaryOrangeButton = styled.button`
   font-weight: bold;
   cursor: pointer;
   margin-top: 15px;
-  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
+`;
+
+// --- STYLED COMPONENTS (สำหรับ POP-UP CHOOSE LEVEL) ---
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalCard = styled.div`
+  background: #ffffff;
+  width: 320px;
+  border-radius: 35px;
+  padding: 25px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  position: relative;
+  text-align: center;
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #666;
+`;
+
+const LevelOptionsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 15px;
+`;
+
+const LevelCard = styled.div`
+  background-color: ${props => props.bgColor};
+  border-radius: 20px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.1s;
+  &:active { transform: scale(0.98); }
 `;
 
 // --- MAIN VIEW COMPONENT ---
 function HomeView({ currentLevel, onChangeLevel, onContinue }) {
+  // 🛠️ 1. เพิ่ม State คุมเปิด-ปิด Pop-up เลือกเลเวลภายในหน้านี้เลย
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isMedium = currentLevel.id === 'medium';
 
@@ -148,6 +204,11 @@ function HomeView({ currentLevel, onChangeLevel, onContinue }) {
     emoji: isMedium ? '🐥' : '🐣',
     title: isMedium ? 'Medium' : 'Beginner',
     bgColor: isMedium ? '#feebc8' : '#c6f6d5'
+  };
+
+  const handleSelectNewLevel = (levelConfig) => {
+    onChangeLevel(levelConfig);
+    setIsModalOpen(false);
   };
 
   return (
@@ -166,7 +227,7 @@ function HomeView({ currentLevel, onChangeLevel, onContinue }) {
       <SectionCard style={{ paddingBottom: '15px' }}>
         <FlexHeader>
           <CardTitle style={{ margin: 0 }}>Current Level</CardTitle>
-          <ChangeTextLink onClick={onChangeLevel}>change</ChangeTextLink>
+          <ChangeTextLink onClick={() => setIsModalOpen(true)}>change</ChangeTextLink>
         </FlexHeader>
 
         <StatusProgressCard bgColor={contentData.bgColor}>
@@ -187,6 +248,34 @@ function HomeView({ currentLevel, onChangeLevel, onContinue }) {
           ▶ Continue
         </PrimaryOrangeButton>
       </SectionCard>
+      {isModalOpen && (
+        <ModalOverlay onClick={() => setIsModalOpen(false)}>
+          <ModalCard onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={() => setIsModalOpen(false)}>✕</CloseButton>
+            <h3 style={{ margin: '5px 0 15px 0', fontSize: '18px', fontWeight: 'bold' }}>Select Difficulty Level</h3>
+
+            <LevelOptionsContainer>
+              {/* ตัวเลือกเริ่มต้น (Easy) */}
+              <LevelCard bgColor="#c6f6d5" onClick={() => handleSelectNewLevel({ id: 'easy', title: 'Beginner', icon: '🐣', color: '#c6f6d5' })}>
+                <div style={{ fontSize: '28px' }}>🐣</div>
+                <div style={{ textAlign: 'left', marginLeft: '12px' }}>
+                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>Beginner</h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#555' }}>Basic Sentence</p>
+                </div>
+              </LevelCard>
+
+              {/* ตัวเลือกปานกลาง (Medium) */}
+              <LevelCard bgColor="#feebc8" onClick={() => handleSelectNewLevel({ id: 'medium', title: 'Medium', icon: '🐥', color: '#feebc8' })}>
+                <div style={{ fontSize: '28px' }}>🐥</div>
+                <div style={{ textAlign: 'left', marginLeft: '12px' }}>
+                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>Medium</h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#555' }}>Interactive Sentence</p>
+                </div>
+              </LevelCard>
+            </LevelOptionsContainer>
+          </ModalCard>
+        </ModalOverlay>
+      )}
     </ContentWrapper>
   );
 }
