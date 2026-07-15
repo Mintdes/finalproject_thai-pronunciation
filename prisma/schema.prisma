@@ -1,0 +1,26 @@
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ตารางบันทึกรหัส OTP ชั่วคราวสำหรับการยืนยันอีเมล
+model EmailVerification {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  otpCode   String
+  expiresAt DateTime
+}
+
+// ตารางข้อมูลผู้ใช้จริงหลังจากยืนยันตัวตนสำเร็จแล้ว
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   
+  email     String   @unique
+  password  String   
+  createdAt DateTime @default(now())
+}
