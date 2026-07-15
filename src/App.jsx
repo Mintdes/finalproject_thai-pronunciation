@@ -4,9 +4,8 @@ import ChooseSentenceView from './components/ChooseSentenceView';
 import HomeView from './components/HomeView';
 import PracticeView from './components/PracticeView';
 import WelcomeView from './components/WelcomeView';
+// 🆕 1. Import LoginView เข้ามาใช้งาน
 import LoginView from './components/LoginView';
-import EasyIconImg from './assets/chick.webp';
-import ProfileImg from './assets/dog.png';
 
 // --- โครงสร้างเลย์เอาต์หลักของแอป ---
 const AppContainer = styled.div`
@@ -70,18 +69,20 @@ const ProfileIcon = styled.div`
   flex-direction: column;
   align-items: center;
   font-size: 12px;
-  cursor: pointer;
+  cursor: pointer; /* 🆕 เปลี่ยน cursor เพื่อให้รู้ว่ากดได้ */
 `;
 
-// 🛠️ แก้ไขจุดนี้: เปลี่ยนจาก styled.div เป็น styled.img เพื่อให้ดึงรูปภาพมาแสดงเป็นภาพโปรไฟล์ได้
-const ProfileImagePlaceholder = styled.img`
+const ProfileImagePlaceholder = styled.div`
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  border-radius: 70%;
   background-color: #fcebd2;
   border: 2px solid #333;
   margin-bottom: 5px;
-  object-fit: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
 `;
 
 const HeaderTextContainer = styled.div`
@@ -121,11 +122,11 @@ const NotificationIcon = () => (
 );
 
 function App() {
+  // 🆕 2. สร้าง State เพื่อเช็คว่าล็อกอินหรือยัง (เริ่มต้นเป็น false เพื่อบังคับให้ผ่านหน้า Login ก่อน)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const [currentView, setCurrentView] = useState('welcome');
-  
-  // 🛠️ แก้ไขจุดนี้: ใส่ EasyIconImg ที่อิมพอร์ตเข้ามา ลงในค่าเริ่มต้นของ State ได้เลย
-  const [activeLevel, setActiveLevel] = useState({ id: 'easy', title: 'เริ่มต้น', icon: EasyIconImg, color: '#c6f6d5' });
+  const [activeLevel, setActiveLevel] = useState({ id: 'easy', title: 'เริ่มต้น', icon: '🐣', color: '#c6f6d5' });
   const [selectedPhrase, setSelectedPhrase] = useState(null);
   const [currentTopic, setCurrentTopic] = useState('');
 
@@ -136,30 +137,28 @@ function App() {
     setCurrentView('home');
   };
 
+  // 🆕 3. ฟังก์ชันการจัดการเมื่อกดยืนยันการ Auth สำเร็จจาก LoginView
   const handleAuthSuccess = () => {
     setIsLoggedIn(true);
-    setCurrentView('welcome');
+    setCurrentView('welcome'); // เมื่อล็อกอินสำเร็จ ให้ส่งผู้ใช้ไปหน้าประเมินระดับ/เลือกเลเวลเริ่มต้น
   };
 
+  // 🆕 4. ฟังก์ชันจำลองการ Log out (ผูกไว้กับปุ่ม Profile เผื่ออยากทดสอบสลับหน้า)
   const handleLogOut = () => {
     if (confirm("Do you want to log out?")) {
       setIsLoggedIn(false);
       setSelectedPhrase(null);
-      setCurrentView('welcome');
     }
   };
 
   const renderCurrentView = () => {
+    // 🆕 5. ถ้าสถานะยังไม่ได้ล็อกอิน ให้บังคับเรนเดอร์หน้าจอ LoginView เท่านั้น
     if (!isLoggedIn) {
-      return <LoginView onLoginSuccess={handleAuthSuccess} />;
+      return <LoginView onAuthSuccess={handleAuthSuccess} />;
     }
+
     if (currentView === 'welcome') {
-      return (
-        <WelcomeView 
-          onConfirmSelection={handleConfirmSelection} 
-          onNavigateToLogin={() => setIsLoggedIn(false)} 
-        />
-      );
+      return <WelcomeView onConfirmSelection={handleConfirmSelection} />;
     }
     if (currentView === 'home') {
       return (
@@ -174,6 +173,7 @@ function App() {
       return (
         <ChooseSentenceView
           onBack={() => setCurrentView('home')}
+          // 🆕 1. ส่งค่า State และฟังก์ชันการเปลี่ยนแปลงลงไป
           initialTopic={currentTopic}
           onTopicToggle={(topic) => setCurrentTopic(topic)}
           onSelectSentence={(phraseData) => {
@@ -197,6 +197,7 @@ function App() {
   return (
     <AppContainer>
       <MainCard>
+        {/* 🆕 6. ปรับเงื่อนไขตรวจสอบ: Header จะแสดงก็ต่อเมื่อล็อกอินแล้ว และไม่ได้อยู่ในหน้าเลือกประโยค/ฝึกฝน */}
         {isLoggedIn && currentView !== 'choose_sentence' && currentView !== 'practice' && (
           <HeaderIcons>
             <LanguageButton>
@@ -207,14 +208,14 @@ function App() {
               <div style={{ marginTop: '10px' }}><AchievementIcon /></div>
               <div style={{ marginTop: '10px' }}><NotificationIcon /></div>
               <ProfileIcon onClick={handleLogOut}>
-                {/* 🛠️ แก้ไขจุดนี้: ใส่ src={ProfileImg} เพื่อดึงรูปหมี/สุนัขที่คุณอิมพอร์ตมาใช้ */}
-                <ProfileImagePlaceholder src={ProfileImg} alt="Profile" />
+                <ProfileImagePlaceholder>🐶</ProfileImagePlaceholder>
                 <span>Log out</span>
               </ProfileIcon>
             </RightIconsGroup>
           </HeaderIcons>
         )}
 
+        {/* 🆕 7. ปรับเงื่อนไขตรวจสอบการแสดงข้อความต้อนรับเช่นเดียวกัน */}
         {isLoggedIn && currentView !== 'choose_sentence' && currentView !== 'practice' && (
           <HeaderTextContainer>
             <GreetingText>Good Evening, {userName}</GreetingText>
