@@ -13,7 +13,6 @@ const ViewContainer = styled.div`
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 `;
 
-// 🛠️ 1. ปรับแถวบนสุดให้เป็น Grid หรือ Flex เพื่อให้ข้อความอยู่ตรงกลาง และปุ่มย้อนกลับอยู่ซ้ายสุดในระนาบเดียวกัน
 const HeaderRow = styled.div`
   width: 100%;
   display: grid;
@@ -22,7 +21,6 @@ const HeaderRow = styled.div`
   margin-bottom: 20px;
 `;
 
-// 🛠️ 2. เอาขอบ พื้นหลัง และเงาออกทั้งหมด ให้เหลือแค่ตัวลูกศรคลีน ๆ
 const TextBackButton = styled.button`
   background: none;
   border: none;
@@ -36,7 +34,6 @@ const TextBackButton = styled.button`
   padding: 0;
 `;
 
-// 🛠️ 3. ปรับขนาดและลบ margin เก่าออกเพื่อให้ระนาบขนานไปกับปุ่มย้อนกลับพอดี
 const SubtitleText = styled.p`
   margin: 0;
   font-size: 14px;
@@ -157,6 +154,7 @@ const ScoreText = styled.h3`
   color: #ea580c;
 `;
 
+// --- MAIN COMPONENT ---
 function PracticeView({ onBack, phraseData }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -270,11 +268,22 @@ function PracticeView({ onBack, phraseData }) {
     setIsRecording(false);
   };
 
+  // ส่งไฟล์เสียงพร้อมชื่อไฟล์เสียงต้นฉบับจริงล็อกไปประมวลผล
   const sendAudioToModel = async (audioBlob) => {
     setIsProcessing(true);
     const formData = new FormData();
     formData.append('audio', audioBlob, 'user_input.wav');
     formData.append('thaiPhrase', phraseData?.thai || '');
+
+    // แกะเอาชื่อไฟล์จริง ๆ ออกมาจาก path ของโมดูล เช่น "ai-sawasdee.wav"
+    let audioFileName = "";
+    if (phraseData?.audio) {
+      const cleanUrl = phraseData.audio.split('?')[0];
+      audioFileName = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1);
+    }
+
+    // ส่งชื่อไฟล์ออริจินัล (เช่น "ai-sawasdee.wav") ไปล็อกตัวจับคู่ที่ฝั่งเซิร์ฟเวอร์
+    formData.append('phraseKey', audioFileName);
 
     try {
       const response = await fetch('http://localhost:5000/api/pronounce/evaluate', {
@@ -303,7 +312,6 @@ function PracticeView({ onBack, phraseData }) {
   return (
     <ViewContainer>
       <WhiteCard>
-        {/* 🛠️ 4. จัดกลุ่มให้อยู่ใน HeaderRow เดียวกันเพื่อให้ขนานตามแนวราบเดียวกัน */}
         <HeaderRow>
           <TextBackButton onClick={onBack}>⭠</TextBackButton>
           <SubtitleText>Speak the phrase</SubtitleText>
