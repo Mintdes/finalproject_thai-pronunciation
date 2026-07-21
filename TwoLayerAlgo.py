@@ -2,7 +2,7 @@ import librosa
 import numpy as np
 import os
 import tempfile
-
+import soundfile as sf
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REF_FOLDER = os.path.join(BASE_DIR, "newref")
@@ -38,18 +38,32 @@ from scipy.io import wavfile
 
 def load_audio_from_bytes(audio_bytes):
     """
-    เขียน Bytes ลง Temp File ใน /tmp ก่อน แล้วค่อยให้ librosa อ่านจาก Path
-    วิธีนี้จะทำให้ librosa แกะ Header ได้เหมือนรันบน local ไม่ติด Format error
+    เขียน Bytes ลง Temp File แล้วใช้ soundfile + librosa ประมวลผล
     """
-    # 1. สร้าง Temp file ชั่วคราวในระบบ
+    # 1. เขียน Temp File ลง /tmp
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
         temp_file.write(audio_bytes)
         temp_path = temp_file.name
 
     try:
-        # 2. อ่านไฟล์จาก Temp Path ด้วย librosa
-        y, sr = librosa.load(temp_path, sr=22050)
+        y, sr = None, 22050
         
+        # 2. ลองอ่านด้วย soundfile ก่อน (เสถียรที่สุดบน Linux)
+        try:
+            y, sr = sf.read(temp_path)
+        except Exception:
+            # Fallback หากไฟล์ไม่ใช่ WAV มาตรฐาน
+            y, sr = librosa.load(temp_path, sr=22050)
+
+        # แปลง Stereo เป็น Mono
+        if len(y.shape) > 1:
+            y = np.mean(y, axis=1)
+
+        # Resample ให้เป็น 22050 Hz หากค่า SR ไม่ตรง
+        if sr != 22050 and len(y) > 0:
+            y = librosa.resample(y, orig_sr=sr, target_sr=22050)
+            sr = 22050
+
         # Trim silence
         try:
             y, _ = librosa.effects.trim(y, top_db=20)
@@ -59,7 +73,7 @@ def load_audio_from_bytes(audio_bytes):
         return y, sr
 
     finally:
-        # 3. ลบ Temp file ทิ้งเสมอหลังอ่านเสร็จเพื่อไม่ให้ขยะเต็ม Memory
+        # ลบ Temp File ทิ้งเสมอ
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
