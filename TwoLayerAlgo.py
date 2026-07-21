@@ -3,15 +3,14 @@ import numpy as np
 import os
 import io
 
-REF_FOLDER = "newref/"
-USER_FOLDER = "newuser/"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+REF_FOLDER = os.path.join(BASE_DIR, "newref")
 
 # ─────────────────────────────────────────────────────
-# Feature Extraction  (single source of truth)
+# Feature Extraction
 # ─────────────────────────────────────────────────────
 
 def extract_features(y, sr):
-    """Layer 1: สกัด MFCC และทำ mean-std normalization ต่อแต่ละ coefficient"""
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
     mfcc = (mfcc - np.mean(mfcc, axis=1, keepdims=True)) / (
         np.std(mfcc, axis=1, keepdims=True) + 1e-6
@@ -19,68 +18,63 @@ def extract_features(y, sr):
     return mfcc
 
 def extract_chroma(y, sr):
-    """Layer 2: สกัด Chroma STFT และทำ normalization สำหรับประโยคที่แยกยากด้วย MFCC"""
     chroma = librosa.feature.chroma_stft(y=y, sr=sr, n_chroma=12)
     chroma = (chroma - np.mean(chroma, axis=1, keepdims=True)) / (
         np.std(chroma, axis=1, keepdims=True) + 1e-6
     )
     return chroma
 
+def extract_fusion_features(y, sr):
+    mfcc = extract_features(y, sr)
+    chroma = extract_chroma(y, sr)
+    return np.vstack([mfcc, chroma])
+
+# ─────────────────────────────────────────────────────
+# Audio Loaders (แยก Bytes กับ Path)
+# ─────────────────────────────────────────────────────
+
 def load_audio_from_bytes(audio_bytes):
-    """อ่านข้อมูลไฟล์เสียงที่เป็น Bytes จากการอัปโหลด/อัดเสียง"""
+    """ใช้กับไฟล์ที่ User ส่งมาจาก Frontend (Bytes)"""
     audio_stream = io.BytesIO(audio_bytes)
     y, sr = librosa.load(audio_stream, sr=22050)
     y, _ = librosa.effects.trim(y, top_db=20)
     return y, sr
 
+def load_audio_from_path(path):
+    """ใช้กับไฟล์ Reference ที่อยู่ในโฟลเดอร์เซิร์ฟเวอร์ (Path)"""
+    y, sr = librosa.load(path, sr=22050)
+    y, _ = librosa.effects.trim(y, top_db=20)
+    return y, sr
+
 # ─────────────────────────────────────────────────────
-# DTW Distance  (รองรับทั้ง MFCC และ Chroma)
+# DTW Distance
 # ─────────────────────────────────────────────────────
 
 def calculate_dist(ref_path, user_feat, feature_type="mfcc"):
-    try:
-        y_ref, sr = load_audio_from_bytes(ref_path)
-        
-        if feature_type == "mfcc":
-            feat_ref = extract_features(y_ref, sr)
-        else:
-            feat_ref = extract_chroma(y_ref, sr)
-
-        T_ref  = feat_ref.shape[1]
-        T_user = user_feat.shape[1]
-        band   = int(0.15 * max(T_ref, T_user))
-
-        D, wp = librosa.sequence.dtw(
-            X=feat_ref, Y=user_feat, metric="cosine", band_rad=band
-        )
-        dist = D[-1, -1] / len(wp)
-        return dist, feat_ref, wp
-
-    except Exception:
-        return 0.0, None, None
-
-def extract_fusion_features(y, sr):
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-    mfcc = (mfcc - np.mean(mfcc, axis=1, keepdims=True)) / (
-        np.std(mfcc, axis=1, keepdims=True) + 1e-6
-    )
+    # ✅ แก้ให้เรียก load_audio_from_path
+    y_ref, sr = load_audio_from_path(ref_path)
     
-    chroma = librosa.feature.chroma_stft(y=y, sr=sr, n_chroma=12)
-    chroma = (chroma - np.mean(chroma, axis=1, keepdims=True)) / (
-        np.std(chroma, axis=1, keepdims=True) + 1e-6
+    if feature_type == "mfcc":
+        feat_ref = extract_features(y_ref, sr)
+    else:
+        feat_ref = extract_chroma(y_ref, sr)
+
+    T_ref  = feat_ref.shape[1]
+    T_user = user_feat.shape[1]
+    band   = int(0.15 * max(T_ref, T_user))
+
+    D, wp = librosa.sequence.dtw(
+        X=feat_ref, Y=user_feat, metric="cosine", band_rad=band
     )
-    
-    return np.vstack([mfcc, chroma])
+    dist = D[-1, -1] / len(wp)
+    return float(dist), feat_ref, wp
 
 # ─────────────────────────────────────────────────────
-# Matching Logic (Two-Layer Cascade)
+# Matching Logic
 # ─────────────────────────────────────────────────────
 
 def run_smart_selector_file(audio_bytes, trigger_threshold=0.10):
-    """
-    ประมวลผลไฟล์เสียงที่ส่งตรงมาจาก Frontend เปรียบเทียบกับ Reference
-    """
-    # โหลดเสียงจาก Bytes
+    # 1. โหลดเสียงผู้ใช้จาก Bytes
     y_user, sr_user = load_audio_from_bytes(audio_bytes)
     feat_user_mfcc = extract_features(y_user, sr_user)
 
@@ -94,7 +88,7 @@ def run_smart_selector_file(audio_bytes, trigger_threshold=0.10):
         )
         results.append({
             "Ref": r_file,
-            "Dist": dist,
+            "Dist": float(dist),
             "Layer": "Layer 1 (MFCC)"
         })
 
@@ -115,7 +109,10 @@ def run_smart_selector_file(audio_bytes, trigger_threshold=0.10):
             
             for cand in chroma_candidates:
                 try:
-                    y_ref, sr_ref = load_audio_from_bytes(os.path.join(REF_FOLDER, cand["Ref"]))
+                    # ✅ แก้ให้เรียก load_audio_from_path
+                    ref_full_path = os.path.join(REF_FOLDER, cand["Ref"])
+                    y_ref, sr_ref = load_audio_from_path(ref_full_path)
+                    
                     feat_ref_fusion = extract_fusion_features(y_ref, sr_ref)
                     T_ref = feat_ref_fusion.shape[1]
                     
@@ -124,7 +121,7 @@ def run_smart_selector_file(audio_bytes, trigger_threshold=0.10):
                         X=feat_ref_fusion, Y=feat_user_fusion, metric="cosine", band_rad=band
                     )
                     
-                    f_dist = D[-1, -1] / max(T_ref, T_user)
+                    f_dist = float(D[-1, -1] / max(T_ref, T_user))
                     
                     layer2_results.append({
                         "Ref": cand["Ref"],
