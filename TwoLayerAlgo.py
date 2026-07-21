@@ -1,9 +1,8 @@
 import librosa
 import numpy as np
 import os
-import io
-import soundfile as sf
-from scipy.io import wavfile
+import tempfile
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REF_FOLDER = os.path.join(BASE_DIR, "newref")
@@ -38,44 +37,31 @@ def extract_fusion_features(y, sr):
 from scipy.io import wavfile
 
 def load_audio_from_bytes(audio_bytes):
-    """อ่านข้อมูลไฟล์เสียงจาก Bytes ด้วย scipy (Pure Python) เพื่อเลี่ยง C-Library"""
-    audio_stream = io.BytesIO(audio_bytes)
-    
+    """
+    เขียน Bytes ลง Temp File ใน /tmp ก่อน แล้วค่อยให้ librosa อ่านจาก Path
+    วิธีนี้จะทำให้ librosa แกะ Header ได้เหมือนรันบน local ไม่ติด Format error
+    """
+    # 1. สร้าง Temp file ชั่วคราวในระบบ
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+        temp_file.write(audio_bytes)
+        temp_path = temp_file.name
+
     try:
-        # 1. ใช้ scipy อ่านไฟล์ WAV จาก Bytes directly
-        sr, data = wavfile.read(audio_stream)
+        # 2. อ่านไฟล์จาก Temp Path ด้วย librosa
+        y, sr = librosa.load(temp_path, sr=22050)
         
-        # ปรับ Normalize ค่าให้เป็น float32 ในช่วง [-1.0, 1.0]
-        if data.dtype == np.int16:
-            y = data.astype(np.float32) / 32768.0
-        elif data.dtype == np.int32:
-            y = data.astype(np.float32) / 2147483648.0
-        elif data.dtype == np.float32:
-            y = data
-        else:
-            y = data.astype(np.float32)
+        # Trim silence
+        try:
+            y, _ = librosa.effects.trim(y, top_db=20)
+        except Exception:
+            pass
 
-        # แปลง Stereo ให้เป็น Mono
-        if len(y.shape) > 1:
-            y = np.mean(y, axis=1)
+        return y, sr
 
-        # Resample เป็น 22050 Hz หากค่า SR ไม่ตรง
-        if sr != 22050 and len(y) > 0:
-            y = librosa.resample(y, orig_sr=sr, target_sr=22050)
-            sr = 22050
-
-    except Exception as e:
-        # Fallback สำรองหากไฟล์ส่งมาแบบแปลกๆ
-        audio_stream.seek(0)
-        y, sr = librosa.load(audio_stream, sr=22050)
-
-    # Trim silence
-    try:
-        y, _ = librosa.effects.trim(y, top_db=20)
-    except Exception:
-        pass
-
-    return y, sr
+    finally:
+        # 3. ลบ Temp file ทิ้งเสมอหลังอ่านเสร็จเพื่อไม่ให้ขยะเต็ม Memory
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 def load_audio_from_path(path):
     """ใช้กับไฟล์ Reference ที่อยู่ในโฟลเดอร์เซิร์ฟเวอร์ (Path)"""
