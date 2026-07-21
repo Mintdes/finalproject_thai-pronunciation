@@ -274,7 +274,6 @@ function PracticeView({ onBack, phraseData }) {
     const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
     const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
 
-    // แปลง AudioBuffer ให้เป็น ArrayBuffer ของ WAV แท้
     const wavArrayBuffer = audioBufferToWav(audioBuffer);
     tempCtx.close();
 
