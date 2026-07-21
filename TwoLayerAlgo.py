@@ -3,6 +3,7 @@ import numpy as np
 import os
 import io
 import soundfile as sf
+from scipy.io import wavfile
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REF_FOLDER = os.path.join(BASE_DIR, "newref")
@@ -34,25 +35,38 @@ def extract_fusion_features(y, sr):
 # Audio Loaders (แยก Bytes กับ Path)
 # ─────────────────────────────────────────────────────
 
+from scipy.io import wavfile
+
 def load_audio_from_bytes(audio_bytes):
-    """อ่านไฟล์เสียงจาก Bytes อย่างปลอดภัยบน Vercel"""
+    """อ่านข้อมูลไฟล์เสียงจาก Bytes ด้วย scipy (Pure Python) เพื่อเลี่ยง C-Library"""
+    audio_stream = io.BytesIO(audio_bytes)
+    
     try:
-        # 1. ลองใช้ soundfile อ่าน Stream Bytes โดยตรง
-        audio_stream = io.BytesIO(audio_bytes)
-        y, sr = sf.read(audio_stream)
+        # 1. ใช้ scipy อ่านไฟล์ WAV จาก Bytes directly
+        sr, data = wavfile.read(audio_stream)
         
-        # แปลง Stereo เป็น Mono หากจำเป็น
+        # ปรับ Normalize ค่าให้เป็น float32 ในช่วง [-1.0, 1.0]
+        if data.dtype == np.int16:
+            y = data.astype(np.float32) / 32768.0
+        elif data.dtype == np.int32:
+            y = data.astype(np.float32) / 2147483648.0
+        elif data.dtype == np.float32:
+            y = data
+        else:
+            y = data.astype(np.float32)
+
+        # แปลง Stereo ให้เป็น Mono
         if len(y.shape) > 1:
             y = np.mean(y, axis=1)
-            
-        # Resample ให้เป็น 22050 Hz ถ้า SR ไม่ตรง
-        if sr != 22050:
+
+        # Resample เป็น 22050 Hz หากค่า SR ไม่ตรง
+        if sr != 22050 and len(y) > 0:
             y = librosa.resample(y, orig_sr=sr, target_sr=22050)
             sr = 22050
-            
-    except Exception:
-        # 2. Fallback: ถ้า soundfile ถอด Header ไม่ได้ ให้ลองส่งเข้า librosa
-        audio_stream = io.BytesIO(audio_bytes)
+
+    except Exception as e:
+        # Fallback สำรองหากไฟล์ส่งมาแบบแปลกๆ
+        audio_stream.seek(0)
         y, sr = librosa.load(audio_stream, sr=22050)
 
     # Trim silence
