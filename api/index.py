@@ -2,9 +2,13 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from TwoLayerAlgo import run_smart_selector_file
 
-app = FastAPI(title="Thai Pronunciation API")
+# 🎯 กำหนด docs_url และ openapi_url ให้เป็น Relative Path หรือตรงตาม Vercel Prefix
+app = FastAPI(
+    title="Thai Pronunciation API",
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json"
+)
 
-# อนุญาตให้ Frontend ยิง CORS เข้ามาได้
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,16 +21,12 @@ app.add_middleware(
 async def run_algo(file: UploadFile = File(...)):
     try:
         audio_bytes = await file.read()
-        
-        # ส่ง Bytes เข้าประมวลผล
         results = run_smart_selector_file(audio_bytes)
         
         if not results:
             raise HTTPException(status_code=500, detail="ไม่สามารถประมวลผลเสียงได้")
 
         best_match = results[0]
-        
-        # Return ค่าในรูปแบบที่ Frontend อ่านง่าย
         return {
             "success": True,
             "distance": float(best_match["Dist"]),
