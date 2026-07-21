@@ -144,7 +144,7 @@ def calculate_dist(ref_path, user_feat, feature_type="mfcc"):
 # ─────────────────────────────────────────────────────
 
 def run_smart_selector_file(audio_bytes, trigger_threshold=0.10):
-    # 1. โหลดเสียงผู้ใช้จาก Bytes
+    # 1. โหลดเสียงผู้ใช้จาก Bytes (ใช้ scipy)
     y_user, sr_user = load_audio_from_bytes(audio_bytes)
     feat_user_mfcc = extract_features(y_user, sr_user)
 
@@ -153,9 +153,9 @@ def run_smart_selector_file(audio_bytes, trigger_threshold=0.10):
 
     # --- LAYER 1: MFCC Matching ---
     for r_file in ref_files:
-        dist, feat_ref, wp = calculate_dist(
-            os.path.join(REF_FOLDER, r_file), feat_user_mfcc, feature_type="mfcc"
-        )
+        ref_path = os.path.join(REF_FOLDER, r_file)
+        # โหลดไฟล์ Ref ด้วย path ตรงๆ
+        dist, feat_ref, wp = calculate_dist(ref_path, feat_user_mfcc, feature_type="mfcc")
         results.append({
             "Ref": r_file,
             "Dist": float(dist),
@@ -179,10 +179,8 @@ def run_smart_selector_file(audio_bytes, trigger_threshold=0.10):
             
             for cand in chroma_candidates:
                 try:
-                    # ✅ แก้ให้เรียก load_audio_from_path
-                    ref_full_path = os.path.join(REF_FOLDER, cand["Ref"])
-                    y_ref, sr_ref = load_audio_from_path(ref_full_path)
-                    
+                    ref_path = os.path.join(REF_FOLDER, cand["Ref"])
+                    y_ref, sr_ref = load_audio_from_path(ref_path)
                     feat_ref_fusion = extract_fusion_features(y_ref, sr_ref)
                     T_ref = feat_ref_fusion.shape[1]
                     
