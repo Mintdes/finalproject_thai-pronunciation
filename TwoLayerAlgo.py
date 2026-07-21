@@ -2,6 +2,7 @@ import librosa
 import numpy as np
 import os
 import tempfile
+import wave
 from scipy.io import wavfile
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -36,40 +37,41 @@ def extract_fusion_features(y, sr):
 
 def load_audio_from_bytes(audio_bytes):
     """
-    รองรับทั้ง PCM WAV แท้ และ WebM/Opus ที่ส่งมาจาก Web Browser
+    อ่านข้อมูลไฟล์เสียง WAV จาก Bytes โดยใช้ Pure Python (scipy + wave)
     """
-    # 1. สร้าง Temp File
+    # 1. เขียน Bytes ลง Temp File
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
         temp_file.write(audio_bytes)
         temp_path = temp_file.name
 
     try:
-        y = None
-        sr = 22050
-
-        # ทางเลือกที่ 1: ลองใช้ scipy อ่าน (สำหรับ WAV แท้)
+        # 2. ใช้ wave module เช็กว่าเป็น RIFF/PCM WAV หรือไม่
         try:
-            sr, data = wavfile.read(temp_path)
-            if data.dtype == np.int16:
-                y = data.astype(np.float32) / 32768.0
-            elif data.dtype == np.int32:
-                y = data.astype(np.float32) / 2147483648.0
-            elif data.dtype == np.float32:
-                y = data
-            else:
-                y = data.astype(np.float32)
-        except Exception:
-            # ทางเลือกที่ 2: หาก scipy อ่านไม่ได้ (เช่น WebM/EBML จากเบราว์เซอร์) ให้ใช้ librosa อ่านข้าม
-            import warnings
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                y, sr = librosa.load(temp_path, sr=22050)
+            with wave.open(temp_path, 'rb') as wf:
+                sr = wf.getframerate()
+                n_channels = wf.getnchannels()
+                sampwidth = wf.getsampwidth()
+        except wave.Error:
+            raise ValueError("รูปแบบไฟล์ไม่ถูกต้อง: Vercel รองรับเฉพาะไฟล์ WAV (PCM) มาตรฐานเท่านั้น กรุณาอัปโหลดไฟล์ .wav แท้")
+
+        # 3. อ่านสัญญาณเสียงด้วย scipy.io.wavfile (Pure Python)
+        sr, data = wavfile.read(temp_path)
+        
+        # Normalization ค่าให้อยู่ในช่วง [-1.0, 1.0]
+        if data.dtype == np.int16:
+            y = data.astype(np.float32) / 32768.0
+        elif data.dtype == np.int32:
+            y = data.astype(np.float32) / 2147483648.0
+        elif data.dtype == np.float32:
+            y = data
+        else:
+            y = data.astype(np.float32)
 
         # แปลง Stereo เป็น Mono
         if len(y.shape) > 1:
             y = np.mean(y, axis=1)
 
-        # Resample ให้เป็น 22050 Hz ถ้า SR ไม่ตรง
+        # Resample เป็น 22050 Hz หากค่า SR ไม่ตรง
         if sr != 22050 and len(y) > 0:
             y = librosa.resample(y, orig_sr=sr, target_sr=22050)
             sr = 22050
