@@ -295,17 +295,18 @@ function PracticeView({ onBack, phraseData }) {
   const sendAudioToModel = async (audioBlob) => {
     setIsProcessing(true);
     const formData = new FormData();
-    formData.append('file', audioBlob, 'user_input.wav'); // ส่งเป็น 'file' ให้ตรงกับ FastAPI UploadFile
+    formData.append('file', audioBlob, 'user_input.wav'); // หรือ 'audio' ตามฝั่ง backend
 
     try {
+      // ใช้ await ได้แล้วเพราะมี async ด้านบน
       const response = await fetch('https://finalproject-thai-pronunciation-yeu.vercel.app/api/run-algo', {
         method: 'POST',
         body: formData
       });
+
       const data = await response.json();
 
       if (response.ok) {
-        // ดึงค่า distance จากโครงสร้างผลลัพธ์ใหม่
         const dist = data.best_match ? data.best_match.Dist : (data.distance || 0);
         setEvaluationResult({ ...data, distance: dist });
       } else {
@@ -318,86 +319,64 @@ function PracticeView({ onBack, phraseData }) {
     }
   };
 
-  // ส่งชื่อไฟล์ออริจินัล (เช่น "ai-sawasdee.wav") ไปล็อกตัวจับคู่ที่ฝั่งเซิร์ฟเวอร์
-  formData.append('phraseKey', audioFileName);
+  useEffect(() => {
+    if (isRecording) drawWaveform();
+    return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current); };
+  }, [isRecording]);
 
-  try {
-    const response = await fetch('http://localhost:5000/api/pronounce/evaluate', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await response.json();
+  return (
+    <ViewContainer>
+      <WhiteCard>
+        <HeaderRow>
+          <TextBackButton onClick={onBack}>⭠</TextBackButton>
+          <SubtitleText>Speak the phrase</SubtitleText>
+        </HeaderRow>
 
-    if (response.ok) {
-      setEvaluationResult(data);
-    } else {
-      alert(data.message || "Evaluation failed.");
-    }
-  } catch (err) {
-    alert("Cannot connect to python evaluation server.");
-  } finally {
-    setIsProcessing(false);
-  }
-};
+        <Illustration src={phraseData?.image} alt="Illustration" onError={(e) => { e.target.style.display = 'none'; }} />
 
-useEffect(() => {
-  if (isRecording) drawWaveform();
-  return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current); };
-}, [isRecording]);
+        <TargetPhraseCard>
+          <ThaiPhrase>{phraseData?.thai || 'ไม่มีข้อมูล'}</ThaiPhrase>
+          <PronunciationText>{phraseData?.karaoke || phraseData?.roman || ''}</PronunciationText>
+          <EngTranslation>{phraseData?.eng || ''}</EngTranslation>
+        </TargetPhraseCard>
 
-return (
-  <ViewContainer>
-    <WhiteCard>
-      <HeaderRow>
-        <TextBackButton onClick={onBack}>⭠</TextBackButton>
-        <SubtitleText>Speak the phrase</SubtitleText>
-      </HeaderRow>
+        <SpeakerButton onClick={handlePlayAudio}>🔊</SpeakerButton>
 
-      <Illustration src={phraseData?.image} alt="Illustration" onError={(e) => { e.target.style.display = 'none'; }} />
+        {isProcessing && <p style={{ fontSize: '14px', color: '#f97316', fontWeight: 'bold', marginTop: '15px' }}>⏳ Analyzing your pronunciation...</p>}
 
-      <TargetPhraseCard>
-        <ThaiPhrase>{phraseData?.thai || 'ไม่มีข้อมูล'}</ThaiPhrase>
-        <PronunciationText>{phraseData?.karaoke || phraseData?.roman || ''}</PronunciationText>
-        <EngTranslation>{phraseData?.eng || ''}</EngTranslation>
-      </TargetPhraseCard>
+        {evaluationResult && !isRecording && (
+          <ResultContainer>
+            {(() => {
+              // 🎯 สูตรแปลงค่า: เอา (1 - distance) * 100 เพื่อให้ได้ % ความถูกต้อง
+              // ใช้ Math.max(0, ...) เผื่อกรณีที่ค่าหลุดเกิน 1 เปอร์เซ็นต์จะได้ไม่ติดลบ
+              const accuracyPercentage = Math.max(0, (1 - evaluationResult.distance) * 100);
 
-      <SpeakerButton onClick={handlePlayAudio}>🔊</SpeakerButton>
+              return (
+                <>
+                  {/* แสดงเป็น Accuracy Score ในรูปแบบ % ที่เข้าใจง่าย */}
+                  <ScoreText>🎯 Accuracy Score: {accuracyPercentage.toFixed(1)}%</ScoreText>
 
-      {isProcessing && <p style={{ fontSize: '14px', color: '#f97316', fontWeight: 'bold', marginTop: '15px' }}>⏳ Analyzing your pronunciation...</p>}
+                  <p style={{ fontSize: '12px', margin: '5px 0 0', color: '#666' }}>
+                    {/* ปรับเกณฑ์การชม: ถ้าความถูกต้องเกิน 75% ถือว่ายอดเยี่ยม */}
+                    {accuracyPercentage >= 75.0 ? "Excellent Pronunciation! 🎉" : "Keep trying! 💪"}
+                  </p>
+                </>
+              );
+            })()}
+          </ResultContainer>
+        )}
+      </WhiteCard>
 
-      {evaluationResult && !isRecording && (
-        <ResultContainer>
-          {(() => {
-            // 🎯 สูตรแปลงค่า: เอา (1 - distance) * 100 เพื่อให้ได้ % ความถูกต้อง
-            // ใช้ Math.max(0, ...) เผื่อกรณีที่ค่าหลุดเกิน 1 เปอร์เซ็นต์จะได้ไม่ติดลบ
-            const accuracyPercentage = Math.max(0, (1 - evaluationResult.distance) * 100);
+      {isRecording && <WaveformCanvas ref={canvasRef} width={300} height={70} />}
 
-            return (
-              <>
-                {/* แสดงเป็น Accuracy Score ในรูปแบบ % ที่เข้าใจง่าย */}
-                <ScoreText>🎯 Accuracy Score: {accuracyPercentage.toFixed(1)}%</ScoreText>
+      <MicButton isRecording={isRecording} onClick={isRecording ? stopRecording : startRecording}>
+        {isRecording ? '⏹️' : '🎙️'}
+      </MicButton>
 
-                <p style={{ fontSize: '12px', margin: '5px 0 0', color: '#666' }}>
-                  {/* ปรับเกณฑ์การชม: ถ้าความถูกต้องเกิน 75% ถือว่ายอดเยี่ยม */}
-                  {accuracyPercentage >= 75.0 ? "Excellent Pronunciation! 🎉" : "Keep trying! 💪"}
-                </p>
-              </>
-            );
-          })()}
-        </ResultContainer>
-      )}
-    </WhiteCard>
-
-    {isRecording && <WaveformCanvas ref={canvasRef} width={300} height={70} />}
-
-    <MicButton isRecording={isRecording} onClick={isRecording ? stopRecording : startRecording}>
-      {isRecording ? '⏹️' : '🎙️'}
-    </MicButton>
-
-    <TapToSpeakText isRecording={isRecording}>
-      {isRecording ? 'Tap to stop and evaluate' : 'Tap to speak'}
-    </TapToSpeakText>
-  </ViewContainer>
-);
-
+      <TapToSpeakText isRecording={isRecording}>
+        {isRecording ? 'Tap to stop and evaluate' : 'Tap to speak'}
+      </TapToSpeakText>
+    </ViewContainer>
+  );
+}
 export default PracticeView;
