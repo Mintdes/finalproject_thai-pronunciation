@@ -1,3 +1,4 @@
+import audioBufferToWav from 'audiobuffer-to-wav'; // 👈 1. Import ตัวแปลงไฟล์ WAV
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
@@ -234,9 +235,18 @@ function PracticeView({ onBack, phraseData }) {
         if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
+      // 🎯 แก้ไขท่อน onstop: แปลง WebM เป็น PCM WAV แท้ก่อนส่ง
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        await sendAudioToModel(audioBlob);
+        const rawWebmBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
+
+        try {
+          // แปลงไฟล์ผ่าน AudioContext ให้เป็น PCM WAV 16-bit แท้
+          const wavBlob = await convertWebmToWav(rawWebmBlob);
+          await sendAudioToModel(wavBlob);
+        } catch (error) {
+          console.error("Audio conversion error:", error);
+          alert("Failed to process audio format.");
+        }
       };
 
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -258,6 +268,19 @@ function PracticeView({ onBack, phraseData }) {
     }
   };
 
+  // 🎯 เพิ่มฟังก์ชันช่วยแปลง WebM -> PCM WAV แท้
+  const convertWebmToWav = async (webmBlob) => {
+    const arrayBuffer = await webmBlob.arrayBuffer();
+    const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+
+    // แปลง AudioBuffer ให้เป็น ArrayBuffer ของ WAV แท้
+    const wavArrayBuffer = audioBufferToWav(audioBuffer);
+    tempCtx.close();
+
+    return new Blob([wavArrayBuffer], { type: 'audio/wav' });
+  };
+
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -268,88 +291,113 @@ function PracticeView({ onBack, phraseData }) {
     setIsRecording(false);
   };
 
-  // ส่งไฟล์เสียงพร้อมชื่อไฟล์เสียงต้นฉบับจริงล็อกไปประมวลผล
+  // 🎯 ปรับ URL ปลายทางให้ยิงไปที่ Vercel API
   const sendAudioToModel = async (audioBlob) => {
     setIsProcessing(true);
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'user_input.wav');
-    formData.append('thaiPhrase', phraseData?.thai || '');
-
-    // แกะเอาชื่อไฟล์จริง ๆ ออกมาจาก path ของโมดูล เช่น "ai-sawasdee.wav"
-    let audioFileName = "";
-    if (phraseData?.audio) {
-      const cleanUrl = phraseData.audio.split('?')[0];
-      audioFileName = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1);
-    }
-
-    // ส่งชื่อไฟล์ออริจินัล (เช่น "ai-sawasdee.wav") ไปล็อกตัวจับคู่ที่ฝั่งเซิร์ฟเวอร์
-    formData.append('phraseKey', audioFileName);
+    formData.append('file', audioBlob, 'user_input.wav'); // ส่งเป็น 'file' ให้ตรงกับ FastAPI UploadFile
 
     try {
-      const response = await fetch('http://localhost:5000/api/pronounce/evaluate', {
+      const response = await fetch('https://finalproject-thai-pronunciation-yeu.vercel.app/api/run-algo', {
         method: 'POST',
         body: formData
       });
       const data = await response.json();
 
       if (response.ok) {
-        setEvaluationResult(data);
+        // ดึงค่า distance จากโครงสร้างผลลัพธ์ใหม่
+        const dist = data.best_match ? data.best_match.Dist : (data.distance || 0);
+        setEvaluationResult({ ...data, distance: dist });
       } else {
-        alert(data.message || "Evaluation failed.");
+        alert(data.detail || "Evaluation failed.");
       }
     } catch (err) {
-      alert("Cannot connect to python evaluation server.");
+      alert("Cannot connect to Python evaluation server.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  useEffect(() => {
-    if (isRecording) drawWaveform();
-    return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current); };
-  }, [isRecording]);
+  // ส่งชื่อไฟล์ออริจินัล (เช่น "ai-sawasdee.wav") ไปล็อกตัวจับคู่ที่ฝั่งเซิร์ฟเวอร์
+  formData.append('phraseKey', audioFileName);
 
-  return (
-    <ViewContainer>
-      <WhiteCard>
-        <HeaderRow>
-          <TextBackButton onClick={onBack}>⭠</TextBackButton>
-          <SubtitleText>Speak the phrase</SubtitleText>
-        </HeaderRow>
+  try {
+    const response = await fetch('http://localhost:5000/api/pronounce/evaluate', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
 
-        <Illustration src={phraseData?.image} alt="Illustration" onError={(e) => { e.target.style.display = 'none'; }} />
+    if (response.ok) {
+      setEvaluationResult(data);
+    } else {
+      alert(data.message || "Evaluation failed.");
+    }
+  } catch (err) {
+    alert("Cannot connect to python evaluation server.");
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
-        <TargetPhraseCard>
-          <ThaiPhrase>{phraseData?.thai || 'ไม่มีข้อมูล'}</ThaiPhrase>
-          <PronunciationText>{phraseData?.karaoke || phraseData?.roman || ''}</PronunciationText>
-          <EngTranslation>{phraseData?.eng || ''}</EngTranslation>
-        </TargetPhraseCard>
+useEffect(() => {
+  if (isRecording) drawWaveform();
+  return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current); };
+}, [isRecording]);
 
-        <SpeakerButton onClick={handlePlayAudio}>🔊</SpeakerButton>
+return (
+  <ViewContainer>
+    <WhiteCard>
+      <HeaderRow>
+        <TextBackButton onClick={onBack}>⭠</TextBackButton>
+        <SubtitleText>Speak the phrase</SubtitleText>
+      </HeaderRow>
 
-        {isProcessing && <p style={{ fontSize: '14px', color: '#f97316', fontWeight: 'bold', marginTop: '15px' }}>⏳ Analyzing your pronunciation...</p>}
+      <Illustration src={phraseData?.image} alt="Illustration" onError={(e) => { e.target.style.display = 'none'; }} />
 
-        {evaluationResult && !isRecording && (
-          <ResultContainer>
-            <ScoreText>🎯 Distance Score: {evaluationResult.distance?.toFixed(3)}</ScoreText>
-            <p style={{ fontSize: '12px', margin: '5px 0 0', color: '#666' }}>
-              {evaluationResult.distance < 0.3 ? "Excellent Pronunciation! 🎉" : "Keep trying! 💪"}
-            </p>
-          </ResultContainer>
-        )}
-      </WhiteCard>
+      <TargetPhraseCard>
+        <ThaiPhrase>{phraseData?.thai || 'ไม่มีข้อมูล'}</ThaiPhrase>
+        <PronunciationText>{phraseData?.karaoke || phraseData?.roman || ''}</PronunciationText>
+        <EngTranslation>{phraseData?.eng || ''}</EngTranslation>
+      </TargetPhraseCard>
 
-      {isRecording && <WaveformCanvas ref={canvasRef} width={300} height={70} />}
+      <SpeakerButton onClick={handlePlayAudio}>🔊</SpeakerButton>
 
-      <MicButton isRecording={isRecording} onClick={isRecording ? stopRecording : startRecording}>
-        {isRecording ? '⏹️' : '🎙️'}
-      </MicButton>
+      {isProcessing && <p style={{ fontSize: '14px', color: '#f97316', fontWeight: 'bold', marginTop: '15px' }}>⏳ Analyzing your pronunciation...</p>}
 
-      <TapToSpeakText isRecording={isRecording}>
-        {isRecording ? 'Tap to stop and evaluate' : 'Tap to speak'}
-      </TapToSpeakText>
-    </ViewContainer>
-  );
-}
+      {evaluationResult && !isRecording && (
+        <ResultContainer>
+          {(() => {
+            // 🎯 สูตรแปลงค่า: เอา (1 - distance) * 100 เพื่อให้ได้ % ความถูกต้อง
+            // ใช้ Math.max(0, ...) เผื่อกรณีที่ค่าหลุดเกิน 1 เปอร์เซ็นต์จะได้ไม่ติดลบ
+            const accuracyPercentage = Math.max(0, (1 - evaluationResult.distance) * 100);
+
+            return (
+              <>
+                {/* แสดงเป็น Accuracy Score ในรูปแบบ % ที่เข้าใจง่าย */}
+                <ScoreText>🎯 Accuracy Score: {accuracyPercentage.toFixed(1)}%</ScoreText>
+
+                <p style={{ fontSize: '12px', margin: '5px 0 0', color: '#666' }}>
+                  {/* ปรับเกณฑ์การชม: ถ้าความถูกต้องเกิน 75% ถือว่ายอดเยี่ยม */}
+                  {accuracyPercentage >= 75.0 ? "Excellent Pronunciation! 🎉" : "Keep trying! 💪"}
+                </p>
+              </>
+            );
+          })()}
+        </ResultContainer>
+      )}
+    </WhiteCard>
+
+    {isRecording && <WaveformCanvas ref={canvasRef} width={300} height={70} />}
+
+    <MicButton isRecording={isRecording} onClick={isRecording ? stopRecording : startRecording}>
+      {isRecording ? '⏹️' : '🎙️'}
+    </MicButton>
+
+    <TapToSpeakText isRecording={isRecording}>
+      {isRecording ? 'Tap to stop and evaluate' : 'Tap to speak'}
+    </TapToSpeakText>
+  </ViewContainer>
+);
 
 export default PracticeView;
