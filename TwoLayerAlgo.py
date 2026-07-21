@@ -2,10 +2,8 @@ import librosa
 import numpy as np
 import os
 
-# กำหนด Path แบบ Absolute เพื่อให้ Vercel หาโฟลเดอร์เจอ 100%
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-REF_FOLDER = os.path.join(BASE_DIR, "newref")
-USER_FOLDER = os.path.join(BASE_DIR, "newuser")
+REF_FOLDER = "newref/"
+USER_FOLDER = "newuser/"
 
 # ─────────────────────────────────────────────────────
 # Feature Extraction  (single source of truth)
