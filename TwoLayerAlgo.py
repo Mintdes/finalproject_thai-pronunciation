@@ -36,27 +36,34 @@ def extract_fusion_features(y, sr):
 
 def load_audio_from_bytes(audio_bytes):
     """
-    อ่านไฟล์ WAV โดยใช้ scipy.io.wavfile บน Temp File 
-    เพื่อแก้ปัญหา NoBackendError บน Serverless
+    รองรับทั้ง PCM WAV แท้ และ WebM/Opus ที่ส่งมาจาก Web Browser
     """
-    # 1. เขียน Bytes ลงใน Temp File ชั่วคราว
+    # 1. สร้าง Temp File
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
         temp_file.write(audio_bytes)
         temp_path = temp_file.name
 
     try:
-        # 2. อ่านไฟล์ด้วย scipy (Pure Python - ไม่ต้องการ C-backend)
-        sr, data = wavfile.read(temp_path)
-        
-        # ปรับ Normalize ค่าสัญญาณให้อยู่ในช่วง [-1.0, 1.0]
-        if data.dtype == np.int16:
-            y = data.astype(np.float32) / 32768.0
-        elif data.dtype == np.int32:
-            y = data.astype(np.float32) / 2147483648.0
-        elif data.dtype == np.float32:
-            y = data
-        else:
-            y = data.astype(np.float32)
+        y = None
+        sr = 22050
+
+        # ทางเลือกที่ 1: ลองใช้ scipy อ่าน (สำหรับ WAV แท้)
+        try:
+            sr, data = wavfile.read(temp_path)
+            if data.dtype == np.int16:
+                y = data.astype(np.float32) / 32768.0
+            elif data.dtype == np.int32:
+                y = data.astype(np.float32) / 2147483648.0
+            elif data.dtype == np.float32:
+                y = data
+            else:
+                y = data.astype(np.float32)
+        except Exception:
+            # ทางเลือกที่ 2: หาก scipy อ่านไม่ได้ (เช่น WebM/EBML จากเบราว์เซอร์) ให้ใช้ librosa อ่านข้าม
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                y, sr = librosa.load(temp_path, sr=22050)
 
         # แปลง Stereo เป็น Mono
         if len(y.shape) > 1:
@@ -76,7 +83,7 @@ def load_audio_from_bytes(audio_bytes):
         return y, sr
 
     finally:
-        # 3. ลบ Temp File ทิ้งเสมอ
+        # ลบ Temp File ทิ้งเสมอ
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
