@@ -1,6 +1,7 @@
 fastapi
 pydantic
 python-multipart
-librosa
-numpy
-scipy
+librosa==0.11.0
+numpy==2.3.3
+scipy==1.16.2
+soundfile==0.13.1

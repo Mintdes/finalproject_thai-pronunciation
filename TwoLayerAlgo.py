@@ -4,8 +4,11 @@ import os
 import soundfile as sf
 import warnings
 
-REF_FOLDER = "newref/"
-USER_FOLDER = "newuser/"
+# หา Directory ของไฟล์ TwoLayerAlgo.py ปัจจุบัน
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+REF_FOLDER = os.path.join(BASE_DIR, "newref")
+USER_FOLDER = os.path.join(BASE_DIR, "newuser")
 
 # ─────────────────────────────────────────────────────
 # Feature Extraction (single source of truth)
@@ -52,7 +55,6 @@ def load_audio(path):
             except Exception:
                 # กรณีอ่านไม่ได้จริงๆ ให้สร้างข้อมูลสัญญาณเพื่อไม่ให้โปรแกรมแครช
                 y = np.random.normal(0, 1, int(22050 * 0.5))
-                sr = 22050
 
     # แปลง Stereo ให้เป็น Mono
     if len(y.shape) > 1:
