@@ -2,6 +2,7 @@ import librosa
 import numpy as np
 import os
 import io
+import soundfile as sf
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REF_FOLDER = os.path.join(BASE_DIR, "newref")
@@ -34,10 +35,32 @@ def extract_fusion_features(y, sr):
 # ─────────────────────────────────────────────────────
 
 def load_audio_from_bytes(audio_bytes):
-    """ใช้กับไฟล์ที่ User ส่งมาจาก Frontend (Bytes)"""
-    audio_stream = io.BytesIO(audio_bytes)
-    y, sr = librosa.load(audio_stream, sr=22050)
-    y, _ = librosa.effects.trim(y, top_db=20)
+    """อ่านไฟล์เสียงจาก Bytes อย่างปลอดภัยบน Vercel"""
+    try:
+        # 1. ลองใช้ soundfile อ่าน Stream Bytes โดยตรง
+        audio_stream = io.BytesIO(audio_bytes)
+        y, sr = sf.read(audio_stream)
+        
+        # แปลง Stereo เป็น Mono หากจำเป็น
+        if len(y.shape) > 1:
+            y = np.mean(y, axis=1)
+            
+        # Resample ให้เป็น 22050 Hz ถ้า SR ไม่ตรง
+        if sr != 22050:
+            y = librosa.resample(y, orig_sr=sr, target_sr=22050)
+            sr = 22050
+            
+    except Exception:
+        # 2. Fallback: ถ้า soundfile ถอด Header ไม่ได้ ให้ลองส่งเข้า librosa
+        audio_stream = io.BytesIO(audio_bytes)
+        y, sr = librosa.load(audio_stream, sr=22050)
+
+    # Trim silence
+    try:
+        y, _ = librosa.effects.trim(y, top_db=20)
+    except Exception:
+        pass
+
     return y, sr
 
 def load_audio_from_path(path):
