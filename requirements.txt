@@ -1,5 +1,6 @@
 fastapi
 pydantic
-numpy
-pandas
+python-multipart
 librosa
+numpy
+scipy
