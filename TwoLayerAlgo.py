@@ -1,6 +1,7 @@
 import librosa
 import numpy as np
 import os
+import io
 
 REF_FOLDER = "newref/"
 USER_FOLDER = "newuser/"
@@ -25,9 +26,10 @@ def extract_chroma(y, sr):
     )
     return chroma
 
-def load_audio(path):
-    """โหลดและ trim silence — ใช้ร่วมกันทุก function"""
-    y, sr = librosa.load(path, sr=22050)
+def load_audio_from_bytes(audio_bytes):
+    """อ่านข้อมูลไฟล์เสียงที่เป็น Bytes จากการอัปโหลด/อัดเสียง"""
+    audio_stream = io.BytesIO(audio_bytes)
+    y, sr = librosa.load(audio_stream, sr=22050)
     y, _ = librosa.effects.trim(y, top_db=20)
     return y, sr
 
@@ -37,7 +39,7 @@ def load_audio(path):
 
 def calculate_dist(ref_path, user_feat, feature_type="mfcc"):
     try:
-        y_ref, sr = load_audio(ref_path)
+        y_ref, sr = load_audio_from_bytes(ref_path)
         
         if feature_type == "mfcc":
             feat_ref = extract_features(y_ref, sr)
@@ -74,10 +76,12 @@ def extract_fusion_features(y, sr):
 # Matching Logic (Two-Layer Cascade)
 # ─────────────────────────────────────────────────────
 
-def run_smart_selector(user_filename, trigger_threshold=0.10):
-    u_path = os.path.join(USER_FOLDER, user_filename)
-
-    y_user, sr_user = load_audio(u_path)
+def run_smart_selector_file(audio_bytes, trigger_threshold=0.10):
+    """
+    ประมวลผลไฟล์เสียงที่ส่งตรงมาจาก Frontend เปรียบเทียบกับ Reference
+    """
+    # โหลดเสียงจาก Bytes
+    y_user, sr_user = load_audio_from_bytes(audio_bytes)
     feat_user_mfcc = extract_features(y_user, sr_user)
 
     ref_files = [f for f in os.listdir(REF_FOLDER) if f.endswith(".wav")]
@@ -89,11 +93,9 @@ def run_smart_selector(user_filename, trigger_threshold=0.10):
             os.path.join(REF_FOLDER, r_file), feat_user_mfcc, feature_type="mfcc"
         )
         results.append({
-            "Ref":      r_file,
-            "Dist":     dist,
-            "feat_ref": feat_ref,
-            "wp":       wp,
-            "Layer":    "Layer 1 (MFCC)"
+            "Ref": r_file,
+            "Dist": dist,
+            "Layer": "Layer 1 (MFCC)"
         })
 
     results.sort(key=lambda x: x["Dist"])
@@ -102,7 +104,6 @@ def run_smart_selector(user_filename, trigger_threshold=0.10):
     if len(results) >= 2:
         dist1 = results[0]["Dist"]
         dist2 = results[1]["Dist"]
-        
         pct_diff = (dist2 - dist1) / (dist1 + 1e-6)
 
         if pct_diff < trigger_threshold:
@@ -114,7 +115,7 @@ def run_smart_selector(user_filename, trigger_threshold=0.10):
             
             for cand in chroma_candidates:
                 try:
-                    y_ref, sr_ref = load_audio(os.path.join(REF_FOLDER, cand["Ref"]))
+                    y_ref, sr_ref = load_audio_from_bytes(os.path.join(REF_FOLDER, cand["Ref"]))
                     feat_ref_fusion = extract_fusion_features(y_ref, sr_ref)
                     T_ref = feat_ref_fusion.shape[1]
                     
@@ -126,11 +127,9 @@ def run_smart_selector(user_filename, trigger_threshold=0.10):
                     f_dist = D[-1, -1] / max(T_ref, T_user)
                     
                     layer2_results.append({
-                        "Ref":      cand["Ref"],
-                        "Dist":     f_dist,
-                        "feat_ref": feat_ref_fusion,
-                        "wp":       wp_f,
-                        "Layer":    "Layer 2 (MFCC + Chroma)"
+                        "Ref": cand["Ref"],
+                        "Dist": f_dist,
+                        "Layer": "Layer 2 (MFCC + Chroma)"
                     })
                 except Exception:
                     continue
@@ -141,4 +140,4 @@ def run_smart_selector(user_filename, trigger_threshold=0.10):
                 results[0] = layer2_results[0]
                 results[1] = layer2_results[1]
 
-    return results, feat_user_mfcc
+    return results
