@@ -1,9 +1,5 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional
-
-# ดึงฟังก์ชัน run_smart_selector มาจาก TwoLayerAlgo.py
-from TwoLayerAlgo import run_smart_selector
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from TwoLayerAlgo import run_smart_selector_file
 
 app = FastAPI(
     title="Thai Pronunciation API",
@@ -11,20 +7,15 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
-class AudioRequest(BaseModel):
-    user_filename: str
-    trigger_threshold: Optional[float] = 0.10
-
 @app.post("/api/run-algo")
-def run_algo(data: AudioRequest):
+async def run_algo(file: UploadFile = File(...)):
     try:
-        # เรียกใช้ฟังก์ชัน run_smart_selector
-        results, _ = run_smart_selector(
-            user_filename=data.user_filename,
-            trigger_threshold=data.trigger_threshold
-        )
+        # อ่านข้อมูลไฟล์เสียงที่อัปโหลด
+        audio_bytes = await file.read()
         
-        # ตัดข้อมูล numpy / array ออก เพื่อให้แปลงเป็น JSON ส่งกลับไป Frontend ได้
+        # ส่งไปคำนวณในอัลกอริทึม
+        results = run_smart_selector_file(audio_bytes)
+        
         clean_results = [
             {
                 "Ref": r["Ref"],
