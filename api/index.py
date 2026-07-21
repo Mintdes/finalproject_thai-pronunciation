@@ -17,6 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    return {"status": "online", "message": "Thai Pronunciation API is running"}
+
 @app.post("/api/run-algo")
 async def run_algo(file: UploadFile = File(...)):
     try:
