@@ -2,10 +2,17 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
-# ดึงฟังก์ชันหรือคลาสมาจาก TwoLayerAlgo.py ของคุณ
-from TwoLayerAlgo import main_algorithm  # (เปลี่ยนเป็นชื่อฟังก์ชันที่คุณใช้)
+# กำหนด docs_url และ openapi_url ให้อยู่ใต้ /api
+app = FastAPI(
+    title="Thai Pronunciation API",
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json"
+)
 
-app = FastAPI(title="TwoLayerAlgo API")
+@app.get("/api")
+@app.get("/api/")
+def root():
+    return {"status": "ok", "message": "Thai Pronunciation API is running"}
 
 # กำหนดโครงสร้างข้อมูลที่รับเข้ามา (ถ้ามี)
 class InputData(BaseModel):
