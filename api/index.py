@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from typing import Optional
 
-# import ฟังก์ชันประมวลผลจาก TwoLayerAlgo
-from TwoLayerAlgo import main_algorithm
+# ดึงฟังก์ชัน run_smart_selector มาจาก TwoLayerAlgo.py
+from TwoLayerAlgo import run_smart_selector
 
 app = FastAPI(
     title="Thai Pronunciation API",
@@ -10,20 +11,33 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
-@app.get("/api")
-@app.get("/api/")
-def root():
-    return {"status": "ok", "message": "API is working"}
+class AudioRequest(BaseModel):
+    user_filename: str
+    trigger_threshold: Optional[float] = 0.10
 
 @app.post("/api/run-algo")
-async def run_algo(file: UploadFile = File(...)):
+def run_algo(data: AudioRequest):
     try:
-        # อ่านไฟล์เสียงเป็น Bytes
-        audio_bytes = await file.read()
+        # เรียกใช้ฟังก์ชัน run_smart_selector
+        results, _ = run_smart_selector(
+            user_filename=data.user_filename,
+            trigger_threshold=data.trigger_threshold
+        )
         
-        # ส่งข้อมูลไฟล์ไปยังอัลกอริทึมของคุณ
-        result = main_algorithm(audio_bytes)
+        # ตัดข้อมูล numpy / array ออก เพื่อให้แปลงเป็น JSON ส่งกลับไป Frontend ได้
+        clean_results = [
+            {
+                "Ref": r["Ref"],
+                "Dist": float(r["Dist"]),
+                "Layer": r["Layer"]
+            }
+            for r in results
+        ]
         
-        return {"status": "success", "data": result}
+        return {
+            "status": "success",
+            "best_match": clean_results[0] if clean_results else None,
+            "all_results": clean_results
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
